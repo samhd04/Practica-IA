@@ -1,0 +1,81 @@
+version = 1
+revision = 3
+requires-python = ">=3.12"
+
+[[package]]
+name = "experta"
+version = "1.9.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "frozendict" },
+    { name = "schema" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8b/7c/355d110bb687caa47d4205963d077abca92f2627bfefafc2115db96e7d58/experta-1.9.4.tar.gz", hash = "sha256:7c6ea687043b138f4ac7d3a8aea92aa60c02035e350c105a6bc142203fedc109", size = 26363, upload-time = "2019-11-16T22:59:33.775Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/03/5d/c06fad9dadbec34d95f548bca648ec0de2afd6f8eb2247194150ad38ee8f/experta-1.9.4-py3-none-any.whl", hash = "sha256:c83d78d17305d9df502d6c3f14259f3b909278f3dd99f2494c0b83791ebe13c9", size = 35588, upload-time = "2019-11-16T22:59:32.332Z" },
+]
+
+[[package]]
+name = "frozendict"
+version = "1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4e/55/a12ded2c426a4d2bee73f88304c9c08ebbdbadb82569ebdd6a0c007cfd08/frozendict-1.2.tar.gz", hash = "sha256:774179f22db2ef8a106e9c38d4d1f8503864603db08de2e33be5b778230f6e45", size = 2650, upload-time = "2016-10-06T13:55:21.627Z" }
+
+[[package]]
+name = "owlrl"
+version = "7.1.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "rdflib" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d1/fc/ce12482d096d65fff01af58f555a6f25e9dbf416fad5d99f91eaab0e11ca/owlrl-7.1.4.tar.gz", hash = "sha256:60bd4067e346b9111f0a2924565afe97ac6595b98b2bbe953928b5113971daf7", size = 44420, upload-time = "2025-07-29T00:17:27.608Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/78/f857ff1a7207e967dc5e8414bbcc15e0aa5cf45f693b1d2ebe2afb3eb1ce/owlrl-7.1.4-py3-none-any.whl", hash = "sha256:e78b46020169783345636da93a467d318f18700c483184dd15e885850cf64775", size = 51981, upload-time = "2025-07-29T00:17:26.229Z" },
+]
+
+[[package]]
+name = "practica1"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "experta" },
+    { name = "owlrl" },
+    { name = "rdflib" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "experta", specifier = ">=1.9.4" },
+    { name = "owlrl", specifier = ">=7.1.4" },
+    { name = "rdflib", specifier = ">=7.1.4" },
+]
+
+[[package]]
+name = "pyparsing"
+version = "3.2.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bb/22/f1129e69d94ffff626bdb5c835506b3a5b4f3d070f17ea295e12c2c6f60f/pyparsing-3.2.3.tar.gz", hash = "sha256:b9c13f1ab8b3b542f72e28f634bad4de758ab3ce4546e4301970ad6fa77c38be", size = 1088608, upload-time = "2025-03-25T05:01:28.114Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/05/e7/df2285f3d08fee213f2d041540fa4fc9ca6c2d44cf36d3a035bf2a8d2bcc/pyparsing-3.2.3-py3-none-any.whl", hash = "sha256:a749938e02d6fd0b59b356ca504a24982314bb090c383e3cf201c95ef7e2bfcf", size = 111120, upload-time = "2025-03-25T05:01:24.908Z" },
+]
+
+[[package]]
+name = "rdflib"
+version = "7.1.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyparsing" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e8/7e/cb2d74466bd8495051ebe2d241b1cb1d4acf9740d481126aef19ef2697f5/rdflib-7.1.4.tar.gz", hash = "sha256:fed46e24f26a788e2ab8e445f7077f00edcf95abb73bcef4b86cefa8b62dd174", size = 4692745, upload-time = "2025-03-29T02:23:02.386Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f4/31/e9b6f04288dcd3fa60cb3179260d6dad81b92aef3063d679ac7d80a827ea/rdflib-7.1.4-py3-none-any.whl", hash = "sha256:72f4adb1990fa5241abd22ddaf36d7cafa5d91d9ff2ba13f3086d339b213d997", size = 565051, upload-time = "2025-03-29T02:22:44.987Z" },
+]
+
+[[package]]
+name = "schema"
+version = "0.6.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ad/fd/07c85c70803465df171340d88b12b7f41f5181777053a5cd8d75ce2f4b89/schema-0.6.7.tar.gz", hash = "sha256:410f44cb025384959d20deef00b4e1595397fa30959947a4f0d92e9c84616f35", size = 18746, upload-time = "2018-01-09T02:04:37.079Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5d/42/32c059aa876eb16521a292e634d18f25408b2441862ff823f59af273d720/schema-0.6.7-py2.py3-none-any.whl", hash = "sha256:a058daf5d926e4ece9f13c4c2366a836143ca7913ef053c5023c569e00175b2a", size = 14409, upload-time = "2018-01-09T02:04:35.576Z" },
+]
