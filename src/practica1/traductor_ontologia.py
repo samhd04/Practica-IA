@@ -6,7 +6,7 @@ from typing import Any, Sequence
 from rdflib import RDF, RDFS, Graph, Node, URIRef, Literal
 from experta import Fact
 from practica1.ontologia import ex
-# from practica1.sistema_experto import Libro
+from practica1.sistema_experto import Evento, Nodo, Ruta, Semaforo, Via
 from collections import defaultdict
 
 
@@ -31,10 +31,10 @@ def traducir(g: Graph) -> Sequence[Fact]:
     # En este ciclo for se realiza la traducción
     for subj, datos in tripletas.items():
         # traducción del tipo RDF.type a una clase de hecho:
-        tipo = _traducir_tipo(datos[RDF.type])
+        tipo_clase, tipo_atributo = _traducir_tipo(datos[RDF.type])
 
         # si `tipo` es None, no es una instancia y no nos interesa agregarlo a la lista de hechos
-        if tipo is None:
+        if tipo_clase is None:
             continue
 
         # ya traducimos el tipo entonces lo eliminamos de los datos que quedan por traducir
@@ -43,16 +43,21 @@ def traducir(g: Graph) -> Sequence[Fact]:
         # traducimos los atributos que quedan por traducir
         atributos = _traducir_atributos(datos)
 
+        hecho_traducido = tipo_clase(**atributos)
+
+        if tipo_atributo is not None:
+            hecho_traducido["tipo"] = tipo_atributo
+
         # agregamos el hecho a la lista de hechos junto con sus atributos
-        hechos.append(tipo(**atributos))
+        hechos.append(hecho_traducido)
 
     return hechos
 
 
-def _traducir_tipo(tipos: set[URIRef]) -> type[Fact] | None:
+def _traducir_tipo(tipos: set[URIRef]) -> tuple[type[Fact] | None, str | None]:
     """
     Recibe un `set` de tipos (objetos del predicado RDF.type) y retorna la clase de hecho
-    correspondiente.
+    correspondiente, junto a un tipo, si es necesario (o None si no lo es).
 
     Retorna None si el tipo es uno de los siguientes:
         - RDFS.Class
@@ -63,13 +68,27 @@ def _traducir_tipo(tipos: set[URIRef]) -> type[Fact] | None:
     _eliminar_tipos_ignorados(tipos)
 
     if len(tipos) == 0:
-        return None
+        return None, None
 
     assert len(tipos) == 1, f"hay más de un tipo: {tipos}"
 
     match next(iter(tipos)):
-        # case ex.Libro:
-        #     return Libro
+        case ex.Calle:
+            return Via, "calle"
+        case ex.Avenida:
+            return Via, "avenida"
+        case ex.Autopista:
+            return Via, "autopista"
+        case ex.Interseccion:
+            return Nodo, "intersección"
+        case ex.Punto_de_referencia:
+            return Nodo, "Punto_de_referencia"
+        case ex.Semaforo:
+            return Semaforo, None
+        case ex.Evento:
+            return Evento, None
+        case ex.Ruta:
+            return Ruta, None
         case tipo:
             raise Exception(f"se intentó traducir un tipo desconocido: {tipo}")
 
@@ -119,8 +138,8 @@ def _traducir_nombre_atributo(pred: Node) -> str:
     """
 
     match pred:
-        case ex.titulo:
-            return "title"
+        case ex.nombre:
+            return "nombre"
         case _:
             raise Exception(f"se encontró un predicado desconocido: {pred}")
 
