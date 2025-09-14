@@ -6,7 +6,7 @@ from typing import Any, Sequence
 from rdflib import RDF, RDFS, Graph, Node, URIRef, Literal
 from experta import Fact
 from practica1.ontologia import ex
-from practica1.sistema_experto import Libro
+# from practica1.sistema_experto import Libro
 from collections import defaultdict
 
 
@@ -68,8 +68,8 @@ def _traducir_tipo(tipos: set[URIRef]) -> type[Fact] | None:
     assert len(tipos) == 1, f"hay más de un tipo: {tipos}"
 
     match next(iter(tipos)):
-        case ex.Libro:
-            return Libro
+        # case ex.Libro:
+        #     return Libro
         case tipo:
             raise Exception(f"se intentó traducir un tipo desconocido: {tipo}")
 
