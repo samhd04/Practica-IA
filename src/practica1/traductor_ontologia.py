@@ -10,6 +10,9 @@ from practica1.sistema_experto import Evento, Nodo, Ruta, Semaforo, Via
 from collections import defaultdict
 
 
+Tripletas = defaultdict[Node, defaultdict[Node, set[Node]]]
+
+
 def traducir(g: Graph) -> Sequence[Fact]:
     """
     Recibe un grafo de ontología y retorna una lista de hechos para el sistema experto.
@@ -19,7 +22,7 @@ def traducir(g: Graph) -> Sequence[Fact]:
     # sus valores son a su vez diccionarios que tienen de llave a los predicados y de valor un
     # `set` con los valores para dicho predicado asociados a dicho sujeto. Es decir, contiene toda
     # la información del grafo de ontología de una forma más fácilmente accesible.
-    tripletas = defaultdict(lambda: defaultdict(set))
+    tripletas: Tripletas = defaultdict(lambda: defaultdict(set))
 
     # En este ciclo for se agregan los tripletas del grafo `g` a la variable `tripletas`.
     for subj, pred, obj in g:
@@ -35,13 +38,14 @@ def traducir(g: Graph) -> Sequence[Fact]:
 
         # si `tipo` es None, no es una instancia y no nos interesa agregarlo a la lista de hechos
         if tipo_clase is None:
+            print(f"Advertencia: ignorando {subj}") # TODO: eliminar esto
             continue
 
         # ya traducimos el tipo entonces lo eliminamos de los datos que quedan por traducir
         del datos[RDF.type]
 
         # traducimos los atributos que quedan por traducir
-        atributos = _traducir_atributos(datos)
+        atributos = _traducir_atributos(tripletas, datos)
 
         hecho_traducido = tipo_clase(**atributos)
 
@@ -54,7 +58,7 @@ def traducir(g: Graph) -> Sequence[Fact]:
     return hechos
 
 
-def _traducir_tipo(tipos: set[URIRef]) -> tuple[type[Fact] | None, str | None]:
+def _traducir_tipo(tipos: set[Node]) -> tuple[type[Fact] | None, str | None]:
     """
     Recibe un `set` de tipos (objetos del predicado RDF.type) y retorna la clase de hecho
     correspondiente, junto a un tipo, si es necesario (o None si no lo es).
@@ -64,7 +68,6 @@ def _traducir_tipo(tipos: set[URIRef]) -> tuple[type[Fact] | None, str | None]:
         - RDF.Property
         - RDFS.Resource
     """
-
     _eliminar_tipos_ignorados(tipos)
 
     if len(tipos) == 0:
@@ -93,7 +96,7 @@ def _traducir_tipo(tipos: set[URIRef]) -> tuple[type[Fact] | None, str | None]:
             raise Exception(f"se intentó traducir un tipo desconocido: {tipo}")
 
 
-def _eliminar_tipos_ignorados(tipos: set[URIRef]):
+def _eliminar_tipos_ignorados(tipos: set[Node]):
     """
     Elimina los siguientes tipos del `set` `tipos`:
         - RDFS.Class
@@ -107,7 +110,7 @@ def _eliminar_tipos_ignorados(tipos: set[URIRef]):
             tipos.remove(tipo)
 
 
-def _traducir_atributos(datos: dict[Node, set[Node]]) -> dict[str, Any]:
+def _traducir_atributos(tripletas: Tripletas, datos: dict[Node, set[Node]]) -> dict[str, Any]:
     """
     Recibe un diccionario de predicados con sus valores y retorna un diccionario de atributos con
     sus respectivos valores para ser usados en una clase de hecho del sistema experto
@@ -117,44 +120,49 @@ def _traducir_atributos(datos: dict[Node, set[Node]]) -> dict[str, Any]:
 
     for pred, objs in datos.items():
         # se traduce el predicado a un nombre de atributo
-        llave = _traducir_nombre_atributo(pred)
-
-        for obj in objs:
-            # se traduce el objeto a un valor que pueda ser usado en el sistema experto
-            valor = _traducir_valor(obj)
-
-            atributos[llave] = valor
-
-            # FIXME: ver qué se hace en experta cuando un hecho tiene un atributo con varios valores?
-            # por ahora, ignoramos los otros
-            break
+        llave, valor = _traducir_atributo(tripletas, pred, objs)
+        atributos[llave] = valor
 
     return atributos
 
 
-def _traducir_nombre_atributo(pred: Node) -> str:
+def _traducir_atributo(tripletas: Tripletas, pred: Node, objs: set[Node]) -> tuple[str, Any]:
     """
-    Recibe un predicado de una tripleta en una ontología y retorna un nombre de atributo adecuado
+    Traduce un predicado con sus objetos de un grafo de ontologías a una tupla (atributo, valor)
+    para ser usado en la creación de un hecho del sistema experto
+
+    Parámetros:
+        - pred: un predicado de una tripleta en una ontología
+        - objs: una lista de objetos asociados a dicho predicado
+    Retorna:
+        Una tupla con los siguientes valores:
+        - el nombre del atributo
+        - el valor del atributo
     """
 
     match pred:
         case ex.nombre:
-            return "nombre"
+            return "nombre", _literal(objs)
+        case ex.fluidez:
+            return "fluidez", _literal(objs)
+        case ex.via:
+            assert len(objs) == 1
+            obj = objs.pop()
+            nombre = tripletas[obj][ex.nombre]
+            return "via", _literal(nombre)
         case _:
             raise Exception(f"se encontró un predicado desconocido: {pred}")
 
 
-def _traducir_valor(obj: Node) -> Any:
+def _literal(objs: set[Node]) -> Any:
     """
-    Recibe un objeto de una tripleta en una ontología y retorna el valor del objeto para ser usado
-    como valor de un atributo de una clase de hecho del sistema experto
+    Retorna el valor del primer elemento de `objs` verificando que en realidad solo hay un elemento
+    y que dicho elemento es un Literal
     """
-
-    match obj:
-        case Literal():
-            return obj.value
-        case _:
-            raise Exception("se encontró un objeto desconocido")
+    assert len(objs) == 1, f"len(objs) != 1, objs={objs}"
+    obj = objs.pop()
+    assert isinstance(obj, Literal)
+    return obj.value
 
 
 # FIXME: probablemente al final sería mejor quitar los Exception e imprimir en su lugar
