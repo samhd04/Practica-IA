@@ -2,7 +2,7 @@
 Sistema experto, contiene definiciones de clases de hechos y el motor de inferencia con sus reglas
 """
 
-from experta import Fact, KnowledgeEngine
+from experta import MATCH, Fact, KnowledgeEngine, Rule
 
 
 class Via(Fact):
@@ -12,10 +12,7 @@ class Via(Fact):
         - nombre: el nombre de la vía
         - tipo: calle | avenida | autopista
         - velocidad_media: un valor de tipo float
-        - fluidez: nula | muy mala | mala | aceptable | buena | muy buena
     """
-
-    pass
 
 
 class Nodo(Fact):
@@ -26,8 +23,6 @@ class Nodo(Fact):
         - nombre: Si es un punto de referencia, el nombre de este
         - vias_conectadas: Si es una intersección, las vías que esta conecta
     """
-
-    pass
 
 
 class Semaforo(Fact):
@@ -70,5 +65,85 @@ class Recomendacion(Fact):
     """
 
 
+class Fluidez(Fact):
+    """
+    Representa la fluidez de una vía
+    Atributos:
+        - fluidez: nula | muy mala | mala | aceptable | buena | muy buena
+        - via: el nombre de la via con esta fluidez
+    """
+
+
 class Motor(KnowledgeEngine):
-    pass
+    def __init__(self):
+        self._vias = {}
+        super().__init__()
+
+    def declare(self, *facts):
+        for fact in facts:
+            if isinstance(fact, Via):
+                self._vias[fact["nombre"]] = fact
+        return super().declare(*facts)
+
+    @Rule(Fluidez(fluidez="nula", via=MATCH.via), salience=4)
+    def fluidez_nula(self, via):
+        print(f"Eliminando via {via} debido a que presenta una fluidez nula")
+        self.retract(self._vias[via])
+
+    @Rule(Evento(tipo=MATCH.tipo, afecta_via=MATCH.via), salience=3)
+    def evento_en_via(self, tipo, via):
+        fluidez = {"choque": "muy mala", "obra": "mala", "manifestación": "nula"}[tipo]
+        print(f"Fluidez {fluidez} debido a {tipo} en la vía {via}")
+        self.declare(Fluidez(fluidez=fluidez, via=via))
+
+    @Rule()
+    def regla3(self):
+        pass
+
+    @Rule()
+    def regla4(self):
+        pass
+
+    @Rule()
+    def regla5(self):
+        pass
+
+    @Rule()
+    def regla6(self):
+        pass
+
+    @Rule()
+    def regla7(self):
+        pass
+
+    @Rule()
+    def regla8(self):
+        pass
+
+    @Rule()
+    def regla9(self):
+        pass
+
+    @Rule()
+    def regla10(self):
+        pass
+
+    @Rule()
+    def regla11(self):
+        pass
+
+    @Rule()
+    def regla12(self):
+        pass
+
+    @Rule()
+    def regla13(self):
+        pass
+
+    @Rule()
+    def regla14(self):
+        pass
+
+    @Rule()
+    def regla15(self):
+        pass

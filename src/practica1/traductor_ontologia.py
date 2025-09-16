@@ -38,7 +38,7 @@ def traducir(g: Graph) -> Sequence[Fact]:
 
         # si `tipo` es None, no es una instancia y no nos interesa agregarlo a la lista de hechos
         if tipo_clase is None:
-            print(f"Advertencia: ignorando {subj}") # TODO: eliminar esto
+            print(f"Advertencia: ignorando {subj}")  # TODO: eliminar esto
             continue
 
         # ya traducimos el tipo entonces lo eliminamos de los datos que quedan por traducir
@@ -110,7 +110,9 @@ def _eliminar_tipos_ignorados(tipos: set[Node]):
             tipos.remove(tipo)
 
 
-def _traducir_atributos(tripletas: Tripletas, datos: dict[Node, set[Node]]) -> dict[str, Any]:
+def _traducir_atributos(
+    tripletas: Tripletas, datos: dict[Node, set[Node]]
+) -> dict[str, Any]:
     """
     Recibe un diccionario de predicados con sus valores y retorna un diccionario de atributos con
     sus respectivos valores para ser usados en una clase de hecho del sistema experto
@@ -126,7 +128,9 @@ def _traducir_atributos(tripletas: Tripletas, datos: dict[Node, set[Node]]) -> d
     return atributos
 
 
-def _traducir_atributo(tripletas: Tripletas, pred: Node, objs: set[Node]) -> tuple[str, Any]:
+def _traducir_atributo(
+    tripletas: Tripletas, pred: Node, objs: set[Node]
+) -> tuple[str, Any]:
     """
     Traduce un predicado con sus objetos de un grafo de ontologías a una tupla (atributo, valor)
     para ser usado en la creación de un hecho del sistema experto
@@ -143,13 +147,12 @@ def _traducir_atributo(tripletas: Tripletas, pred: Node, objs: set[Node]) -> tup
     match pred:
         case ex.nombre:
             return "nombre", _literal(objs)
-        case ex.fluidez:
-            return "fluidez", _literal(objs)
+        case ex.tipo:
+            return "tipo", _literal(objs)
         case ex.via:
-            assert len(objs) == 1
-            obj = objs.pop()
-            nombre = tripletas[obj][ex.nombre]
-            return "via", _literal(nombre)
+            return "via", _uri_ref_nombre(tripletas, objs)
+        case ex.afectaVia:
+            return "afecta_via", _uri_ref_nombre(tripletas, objs)
         case _:
             raise Exception(f"se encontró un predicado desconocido: {pred}")
 
@@ -160,9 +163,21 @@ def _literal(objs: set[Node]) -> Any:
     y que dicho elemento es un Literal
     """
     assert len(objs) == 1, f"len(objs) != 1, objs={objs}"
-    obj = objs.pop()
+    obj = next(iter(objs))
     assert isinstance(obj, Literal)
     return obj.value
+
+
+def _uri_ref_nombre(tripletas: Tripletas, objs: set[Node]) -> str:
+    """
+    Retorna el nombre del primer elemento de `objs` verificando que en realidad solo hay un
+    elemento y que dicho elemento es un URIRef que además tiene un predicado ex:nombre
+    """
+    assert len(objs) == 1
+    obj = next(iter(objs))
+    assert isinstance(obj, URIRef)
+    nombre = tripletas[obj][URIRef(ex.nombre)]
+    return _literal(nombre)
 
 
 # FIXME: probablemente al final sería mejor quitar los Exception e imprimir en su lugar
