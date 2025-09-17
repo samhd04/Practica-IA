@@ -2,7 +2,8 @@
 Sistema experto, contiene definiciones de clases de hechos y el motor de inferencia con sus reglas
 """
 
-from experta import MATCH, Fact, KnowledgeEngine, Rule
+from collections import defaultdict
+from experta import MATCH, Fact, KnowledgeEngine, Rule, NOT
 
 
 class Via(Fact):
@@ -11,7 +12,8 @@ class Via(Fact):
     Atributos:
         - nombre: el nombre de la vía
         - tipo: calle | avenida | autopista
-        - velocidad_media: un valor de tipo float
+        - velocidad_media: un valor de tipo float en metros/minuto
+        - longitud: longitud de la vía en metros
     """
 
 
@@ -74,21 +76,122 @@ class Fluidez(Fact):
     """
 
 
+class Objetivo(Fact):
+    """
+    Representa el objetivo del usuario (desde dónde quiere partir y adónde quiere llegar)
+    Atributos:
+        - desde: lugar de partida (nombre de un punto de referencia)
+        - hasta: lugar al que se desea llegar (nombre de un punto de referencia)
+    """
+
+
+class TiempoRuta(Fact):
+    """
+    Representa
+    Atributos:
+        - ruta: el nombre de la ruta
+        - tiempo_estimado: tiempo en minutos que toma atravesar la ruta
+    """
+
+
 class Motor(KnowledgeEngine):
     def __init__(self):
-        self._vias = {}
+        # en self.__vias van a estar todos los hechos declarados de tipo Via (la llave es el nombre de la via)
+        self.__vias = {}
+
+        # en self.__rutas van a estar todos los hechos declarados de tipo Ruta (la llave es el nombre de la ruta)
+        self.__rutas = {}
+
+        # en self.__semaforos van a estar todos los hechos declarados de tipo Semaforo
+        # (la llave es el nombre de la vía en la que se encuentra el semaforo y el valor es una
+        # lista de semafaros en esa vía)
+        self.__semaforos = defaultdict(list)
+
         super().__init__()
 
     def declare(self, *facts):
+        # Iterar sobre todos los hechos a declarar, agregándolos a self.__vias si son de tipo Via,
+        # a self.__rutas si son de tipo Ruta y a self.__semaforos si son tipo Semaforo
         for fact in facts:
             if isinstance(fact, Via):
-                self._vias[fact["nombre"]] = fact
+                self.__vias[fact["nombre"]] = fact
+            elif isinstance(fact, Ruta):
+                self.__rutas[fact["nombre"]] = fact
+            elif isinstance(fact, Semaforo):
+                self.__semaforos[fact["via"]].append(fact)
         return super().declare(*facts)
 
     @Rule(Fluidez(fluidez="nula", via=MATCH.via), salience=4)
     def fluidez_nula(self, via):
+        """
+        Regla que elimina las vias con fluidez nula, y por lo tanto también elimina todas las rutas
+        que transitan esa vía eliminada
+        """
         print(f"Eliminando via {via} debido a que presenta una fluidez nula")
-        self.retract(self._vias[via])
+        self.retract(self.__vias[via])
+
+        for ruta_nombre, ruta in self.__rutas.items():
+            if via in ruta["vias"]:
+                print(f"\tTambién eliminando ruta {ruta_nombre} que contiene esta via")
+                self.retract(ruta)
+
+    @Rule(
+        Ruta(nombre=MATCH.ruta_nombre, vias=MATCH.ruta_vias),
+        Nodo(
+            tipo="Punto_de_referencia",
+            nombre=MATCH.punto_nombre,
+            vias_conectadas=MATCH.punto_vias_conectadas,
+        ),
+        Objetivo(desde=MATCH.punto_nombre),
+        salience=3,
+    )
+    def ruta_que_no_inicia_en_objetivo(
+        self, ruta_nombre, ruta_vias, punto_vias_contectadas
+    ):
+        """
+        Regla que elimina todas las rutas que inician en una vía que no contiene el punto de
+        partida deseado
+        """
+        ruta_sirve = False
+        for via in punto_vias_contectadas:
+            if via == ruta_vias[0]:
+                ruta_sirve = True
+                break
+
+        if not ruta_sirve:
+            print(
+                f"Eliminando ruta {ruta_nombre} debido a que no inicia en el punto de partida deseado"
+            )
+            self.retract(self.__rutas[ruta_nombre])
+
+    @Rule(
+        Ruta(nombre=MATCH.ruta_nombre, vias=MATCH.ruta_vias),
+        Nodo(
+            tipo="Punto_de_referencia",
+            nombre=MATCH.punto_nombre,
+            vias_conectadas=MATCH.punto_vias_conectadas,
+        ),
+        Objetivo(hasta=MATCH.punto_nombre),
+        salience=3,
+    )
+    def ruta_que_no_termina_en_objetivo(
+        self, ruta_nombre, ruta_vias, punto_vias_contectadas
+    ):
+        """
+        Regla que elimina todas las rutas que terminan en una vía que no contiene el punto de
+        llegada deseado
+        """
+        ruta_sirve = False
+        for via in punto_vias_contectadas:
+            if via == ruta_vias[-1]:
+                ruta_sirve = True
+                break
+
+        if not ruta_sirve:
+            print(
+                f"Eliminando ruta {ruta_nombre} debido a que no termina en el punto de llegada deseado"
+            )
+            self.retract(self.__rutas[ruta_nombre])
 
     @Rule(Evento(tipo=MATCH.tipo, afecta_via=MATCH.via), salience=3)
     def evento_en_via(self, tipo, via):
@@ -96,13 +199,24 @@ class Motor(KnowledgeEngine):
         print(f"Fluidez {fluidez} debido a {tipo} en la vía {via}")
         self.declare(Fluidez(fluidez=fluidez, via=via))
 
-    @Rule()
-    def regla3(self):
-        pass
+    @Rule(
+        Ruta(nombre=MATCH.nombre, vias=MATCH.vias), NOT(TiempoRuta(ruta=MATCH.nombre))
+    )
+    def temporizar_ruta(self, nombre, vias):
+        """
+        Regla que calcula el tiempo estimado de cada ruta
+        """
+        tiempo_estimado = 0
 
-    @Rule()
-    def regla4(self):
-        pass
+        for via_nombre in vias:
+            via = self.__vias[via_nombre]
+            # FIXME: mejorar esto
+            tiempo = via["longitud"] / via["velocidad_media"]
+            for semaforo in self.__semaforos[via_nombre]:
+                tiempo += semaforo["tiempo_espera"]
+            tiempo_estimado += tiempo
+
+        self.declare(TiempoRuta(ruta=nombre, tiempo_estimado=tiempo_estimado))
 
     @Rule()
     def regla5(self):
