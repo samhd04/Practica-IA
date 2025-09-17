@@ -219,10 +219,6 @@ class Motor(KnowledgeEngine):
         self.declare(TiempoRuta(ruta=nombre, tiempo_estimado=tiempo_estimado))
 
     @Rule()
-    def regla5(self):
-        pass
-
-    @Rule()
     def regla6(self):
         pass
 
