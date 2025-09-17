@@ -84,6 +84,15 @@ class Objetivo(Fact):
     """
 
 
+class TiempoVia(Fact):
+    """
+    Representa el tiempo que toma atravesar una vía
+    Atributos:
+        - via: el nombre de la via
+        - tiempo_estimado: tiempo en minutos que toma atravesar la via
+    """
+
+
 class TiempoRuta(Fact):
     """
     Representa el tiempo en minutos que se demoraría un carro en seguir una ruta
@@ -101,23 +110,19 @@ class Motor(KnowledgeEngine):
         # en self.__rutas van a estar todos los hechos declarados de tipo Ruta (la llave es el nombre de la ruta)
         self.__rutas = {}
 
-        # en self.__semaforos van a estar todos los hechos declarados de tipo Semaforo
-        # (la llave es el nombre de la vía en la que se encuentra el semaforo y el valor es una
-        # lista de semafaros en esa vía)
-        self.__semaforos = defaultdict(list)
+        # en self.__tiempos_via van a estar todos los hechos declarados de tipo TiempoVia (la llave es el nombre de la via)
+        self.__tiempos_via = {}
 
         super().__init__()
 
     def declare(self, *facts):
-        # Iterar sobre todos los hechos a declarar, agregándolos a self.__vias si son de tipo Via,
-        # a self.__rutas si son de tipo Ruta y a self.__semaforos si son tipo Semaforo
+        # Iterar sobre todos los hechos a declarar, agregándolos a self.__vias si son de tipo Via y
+        # a self.__rutas si son de tipo Ruta
         for fact in facts:
             if isinstance(fact, Via):
                 self.__vias[fact["nombre"]] = fact
             elif isinstance(fact, Ruta):
                 self.__rutas[fact["nombre"]] = fact
-            elif isinstance(fact, Semaforo):
-                self.__semaforos[fact["via"]].append(fact)
         return super().declare(*facts)
 
     @Rule(Fluidez(fluidez="nula", via=MATCH.via), salience=4)
@@ -194,40 +199,74 @@ class Motor(KnowledgeEngine):
 
     @Rule(Evento(tipo=MATCH.tipo, afecta_via=MATCH.via), salience=3)
     def evento_en_via(self, tipo, via):
+        # FIXME: definir esto
         fluidez = {"choque": "muy mala", "obra": "mala", "manifestación": "nula"}[tipo]
         print(f"Fluidez {fluidez} debido a {tipo} en la vía {via}")
         self.declare(Fluidez(fluidez=fluidez, via=via))
 
     @Rule(
+        Via(
+            nombre=MATCH.nombre,
+            velocidad_media=MATCH.velocidad_media,
+            longitud=MATCH.longitud,
+        ),
+        NOT(TiempoVia(via=MATCH.nombre)),
+    )
+    def calcular_tiempo_via(self, nombre, velocidad_media, longitud):
+        """
+        Cálculo inicial del tiempo estimado que toma atravesar una via
+        """
+        tiempo = longitud / velocidad_media
+        print(f"Cálculo inicial de tiempo estimado para via {nombre}: {tiempo}")
+        hecho = self.declare(TiempoVia(via=nombre, tiempo_estimado=tiempo))
+        self.__tiempos_via[nombre] = hecho
+
+    @Rule(
+        TiempoVia(via=MATCH.via_nombre, tiempo_estimado=MATCH.tiempo),
+        Semaforo(via=MATCH.via_nombre, tiempo_espera=MATCH.tiempo_semaforo),
+    )
+    def agregar_tiempos_semaforos(self, via_nombre, tiempo, tiempo_semaforo):
+        """
+        Agrega el tiempo que se demoran los semáforos al tiempo estimado de atravesar la vía
+        """
+        nuevo_tiempo = tiempo + tiempo_semaforo
+        print(
+            f"Cálculo (incluyendo semaforos) de tiempo estimado para via {via_nombre}: {nuevo_tiempo}"
+        )
+        tiempo_via = self.__tiempos_via[via_nombre]
+        self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo)
+
+    @Rule(
+        TiempoVia(via=MATCH.via_nombre, tiempo_estimado=MATCH.tiempo),
+        Evento(afecta_via=MATCH.via_nombre, tipo=MATCH.evento_tipo),
+    )
+    def agregar_tiempos_eventos(self, via_nombre, tiempo, evento_tipo):
+        """
+        Agrega el tiempo que se demoran los semáforos al tiempo estimado de atravesar la vía
+        """
+        # FIXME: definir estos valores
+        tiempo_adicional = {"choque": 20, "obra": 10, "manifestación": 999}[evento_tipo]
+        nuevo_tiempo = tiempo + tiempo_adicional
+        print(
+            f"Cálculo (incluyendo {evento_tipo}) de tiempo estimado para via {via_nombre}: {nuevo_tiempo}"
+        )
+        tiempo_via = self.__tiempos_via[via_nombre]
+        self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo)
+
+    @Rule(
         Ruta(nombre=MATCH.nombre, vias=MATCH.vias), NOT(TiempoRuta(ruta=MATCH.nombre))
     )
-    def temporizar_ruta(self, nombre, vias):
+    def calcular_tiempo_ruta(self, nombre, vias):
         """
         Regla que calcula el tiempo estimado de cada ruta
         """
         tiempo_estimado = 0
 
         for via_nombre in vias:
-            via = self.__vias[via_nombre]
-            # FIXME: mejorar esto
-            tiempo = via["longitud"] / via["velocidad_media"]
-            for semaforo in self.__semaforos[via_nombre]:
-                tiempo += semaforo["tiempo_espera"]
-            tiempo_estimado += tiempo
+            tiempo_via = self.__tiempos_via[via_nombre]
+            tiempo_estimado += tiempo_via["tiempo_estimado"]
 
         self.declare(TiempoRuta(ruta=nombre, tiempo_estimado=tiempo_estimado))
-
-    @Rule()
-    def regla6(self):
-        pass
-
-    @Rule()
-    def regla7(self):
-        pass
-
-    @Rule()
-    def regla8(self):
-        pass
 
     @Rule()
     def regla9(self):
