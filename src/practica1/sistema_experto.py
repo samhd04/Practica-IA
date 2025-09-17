@@ -51,7 +51,6 @@ class Ruta(Fact):
         - nombre: el nombre de la ruta
         - vias: lista de nombres de vías
         - distancia: la distancia total que recorre esta ruta
-        - tiempo_estimado: tiempo en minutos que se demoraría un carro en seguir esta ruta
     """
 
 
@@ -87,7 +86,7 @@ class Objetivo(Fact):
 
 class TiempoRuta(Fact):
     """
-    Representa
+    Representa el tiempo en minutos que se demoraría un carro en seguir una ruta
     Atributos:
         - ruta: el nombre de la ruta
         - tiempo_estimado: tiempo en minutos que toma atravesar la ruta
