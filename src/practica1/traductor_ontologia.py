@@ -4,13 +4,22 @@ Traductor del componente de la ontología al sistema experto
 
 from typing import Any, Sequence
 from rdflib import RDF, RDFS, XSD, BNode, Graph, Node, URIRef, Literal, DC
+from rdflib.collection import Collection
 from experta import Fact
 from practica1.ontologia import RUTA, GEO
 from practica1.sistema_experto import Evento, Nodo, Ruta, Semaforo, Via
 from collections import defaultdict
 
 
-Tripletas = defaultdict[Node, defaultdict[Node, set[Node]]]
+# llave: predicado del grafo de ontologias asociado a un sujeto específico
+# valor: valores de ese predicado asociados a un sujeto específico
+Predicados = defaultdict[Node, set[Node]]
+
+# llave: sujetos del grafo de ontologias
+# valor: un diccionario donde
+#   - llave: predicado del grafo de ontologias asociados al sujeto
+#   - valor: valores de dicho predicado asociados al sujeto
+Tripletas = defaultdict[Node, Predicados]
 
 
 def traducir(g: Graph) -> Sequence[Fact]:
@@ -68,6 +77,10 @@ def _traducir_tipo(tipos: set[Node]) -> tuple[type[Fact] | None, str | None]:
 
     Retorna (None, None) si el tipo no se refiere a una instancia:
     """
+
+    if not _es_instancia(tipos):
+        return None, None
+
     _eliminar_tipos_ignorados(tipos)
 
     if len(tipos) == 0:
@@ -82,6 +95,8 @@ def _traducir_tipo(tipos: set[Node]) -> tuple[type[Fact] | None, str | None]:
             return Via, "avenida"
         case RUTA.Autopista:
             return Via, "autopista"
+        case RUTA.Transversal:
+            return Via, "transversal"
         case RUTA.Interseccion:
             return Nodo, "intersección"
         case RUTA.Punto_de_referencia:
@@ -98,6 +113,22 @@ def _traducir_tipo(tipos: set[Node]) -> tuple[type[Fact] | None, str | None]:
             raise Exception(f"se intentó traducir un tipo desconocido: {tipo}")
 
 
+def _es_instancia(tipos: set[Node]):
+    """
+    Retorna True si el sujeto asociado a los `tipos` es una instancia
+    """
+
+    tipos_que_no_son_instancias = {
+        RDFS.Class,
+        RDF.Property,
+        XSD.boolean,
+        XSD.string,
+        XSD.double,
+        RDF.List,
+    }
+    return len(tipos.intersection(tipos_que_no_son_instancias)) == 0
+
+
 def _eliminar_tipos_ignorados(tipos: set[Node]):
     """
     Elimina los siguientes tipos del `set` `tipos`:
@@ -108,14 +139,7 @@ def _eliminar_tipos_ignorados(tipos: set[Node]):
     """
 
     # eliminar tipos en `tipos_ignorados`
-    tipos_ignorados = [
-        RDFS.Class,
-        RDFS.Resource,
-        RDF.Property,
-        XSD.boolean,
-        XSD.string,
-        RDF.List,
-    ]
+    tipos_ignorados = [RDFS.Resource]
     for tipo in tipos_ignorados:
         if tipo in tipos:
             tipos.remove(tipo)
@@ -124,12 +148,25 @@ def _eliminar_tipos_ignorados(tipos: set[Node]):
     # los tipos en el valor del diccionario
     tipos_ignorados_si_ya_hay = {
         RUTA.Nodo: [RUTA.Interseccion],
-        GEO.SpatialThing: [RUTA.Interseccion, RUTA.Carrera, RUTA.Autopista],
+        GEO.SpatialThing: [
+            RUTA.Interseccion,
+            RUTA.Carrera,
+            RUTA.Autopista,
+            RUTA.Transversal,
+            RUTA.Calle,
+            RUTA.Avenida,
+        ],
         RUTA.Via: [
             RUTA.Carrera,
             RUTA.Autopista,
             RUTA.Interseccion,
+            RUTA.Calle,
+            RUTA.Avenida,
+            RUTA.Transversal,
         ],  # FIXME: intersecicon no deberia estar aqui
+        RUTA.PuntoReferencia: [
+            RUTA.Interseccion
+        ],  # FIXME: esta linea no deberia estar aqui
     }
     for tipo, alternativas in tipos_ignorados_si_ya_hay.items():
         if tipo in tipos:
@@ -222,6 +259,18 @@ def _traducir_atributo(
             # FIXME confirmar
             # se ignora porque ya se incluye en las subpropiedades
             return (None, None)
+        case RUTA.tieneDistancia:
+            return "distancia", _literal(objs)
+        case RUTA.tieneVias:
+            return "vias", _collection_nombres(tripletas, objs)
+        case RUTA.tiempoEstimado:
+            return "tiempo_estimado", _literal(objs)
+        case RUTA.cierreTotal:
+            return "cierre_total", _literal(objs)
+        case RUTA.duracion:
+            return "duracion", _literal(objs)
+        case RUTA.tieneNombre:
+            return "nombre", _literal(objs)
         case _:
             raise Exception(f"se encontró un predicado desconocido: {pred}")
 
@@ -240,7 +289,7 @@ def _literal(objs: set[Node]) -> Any:
 def _uri_ref_nombre(tripletas: Tripletas, objs: set[Node]) -> str:
     """
     Retorna el nombre del primer elemento de `objs` verificando que en realidad solo hay un
-    elemento y que dicho elemento es un URIRef que además tiene un predicado ex:nombre
+    elemento y que dicho elemento es un URIRef que además tiene un predicado RUTA:nombre
     """
     assert len(objs) == 1
     obj = next(iter(objs))
@@ -251,7 +300,7 @@ def _uri_ref_nombre(tripletas: Tripletas, objs: set[Node]) -> str:
 
 def _uri_ref_nombres(tripletas: Tripletas, objs: set[Node]) -> list[str]:
     """
-    Retorna los nombres de los elementos de `objs` verificando que dichos elementos son URIRef o BNode que además tienen un predicado ex:nombre
+    Retorna los nombres de los elementos de `objs` verificando que dichos elementos son URIRef o BNode que además tienen un predicado RUTA:nombre si son URIRef
     """
     nombres = []
     for obj in objs:
@@ -262,6 +311,46 @@ def _uri_ref_nombres(tripletas: Tripletas, objs: set[Node]) -> list[str]:
             nombre = str(obj)
             nombres.append(nombre)
     return nombres
+
+
+def _collection_nombres(tripletas: Tripletas, objs: set[Node]) -> list[str]:
+    """
+    Retorna una lista con los nombres de los elementos de `objs` verificando que `objs` contenga una única collección cuyos elementos tengan valores para el predicado RUTA:nombre
+    """
+    assert len(objs) == 1
+    lista = next(iter(objs))
+    assert isinstance(lista, BNode)
+
+    # obtener los elementos de la colleción en una lista de python
+    elementos = _recorrer_collection(tripletas, tripletas[lista])
+
+    # obtener los RUTA:nombre de los elementos de la colleción
+    elementos = list(map(lambda e: _literal(tripletas[e][RUTA.nombre]), elementos))
+
+    return elementos
+
+
+def _recorrer_collection(tripletas: Tripletas, collection: Predicados) -> list[URIRef]:
+    """
+    Recorre la collección `collection` retornando una lista de URIRef (los elementos de la collección)
+    """
+    resultado = []
+    cur = collection
+    while True:
+        assert len(cur[RDF.first]) == 1, f"len(first) != 1, first: {cur[RDF.first]}"
+        first = next(iter(cur[RDF.first]))
+
+        assert isinstance(first, URIRef), f"first is not an URIRef, first: {first}"
+
+        resultado.append(first)
+
+        assert len(cur[RDF.rest]) == 1
+        rest = next(iter(cur[RDF.rest]))
+
+        if rest == RDF.nil:
+            break
+        cur = tripletas[rest]
+    return resultado
 
 
 # FIXME: probablemente al final sería mejor quitar los Exception e imprimir en su lugar

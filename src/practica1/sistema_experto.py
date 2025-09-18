@@ -11,7 +11,7 @@ class Via(Fact):
     Representa una vía por la cual transitan carros
     Atributos:
         - nombre: el nombre de la vía
-        - tipo: calle | avenida | autopista | carrera
+        - tipo: calle | avenida | autopista | carrera | transversal
         - velocidad_media: un valor de tipo float en kilometros/hora
         - velocidad_maxima: un valor de tipo float en kilometros/hora
         - longitud: longitud de la vía en metros
@@ -46,6 +46,8 @@ class Evento(Fact):
     Atributos:
         - tipo: choque | obra | manifestación
         - afecta_via: el nombre de la via que es afectada por este evento
+        - cierre_total: indica si este evento causa un cierre total (True/False)
+        - duracion: ... FIXME
     """
 
 
@@ -56,6 +58,7 @@ class Ruta(Fact):
         - nombre: el nombre de la ruta
         - vias: lista de nombres de vías
         - distancia: la distancia total que recorre esta ruta
+        - tiempo_estimado: ... FIXME
     """
 
 
