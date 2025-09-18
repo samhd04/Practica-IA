@@ -16,6 +16,7 @@ class Via(Fact):
         - velocidad_maxima: un valor de tipo float en kilometros/hora
         - longitud: longitud de la vía en metros
         - fluidez: Muy mala | Mala | Aceptable | Buena | Muy buena
+        - es_bidireccional: ... FIXME
     """
 
 

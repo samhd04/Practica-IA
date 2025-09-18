@@ -3,7 +3,7 @@ Traductor del componente de la ontología al sistema experto
 """
 
 from typing import Any, Sequence
-from rdflib import RDF, RDFS, XSD, BNode, Graph, Node, URIRef, Literal
+from rdflib import RDF, RDFS, XSD, BNode, Graph, Node, URIRef, Literal, DC
 from experta import Fact
 from practica1.ontologia import RUTA, GEO
 from practica1.sistema_experto import Evento, Nodo, Ruta, Semaforo, Via
@@ -108,7 +108,14 @@ def _eliminar_tipos_ignorados(tipos: set[Node]):
     """
 
     # eliminar tipos en `tipos_ignorados`
-    tipos_ignorados = [RDFS.Class, RDFS.Resource, RDF.Property, XSD.boolean, RDF.List]
+    tipos_ignorados = [
+        RDFS.Class,
+        RDFS.Resource,
+        RDF.Property,
+        XSD.boolean,
+        XSD.string,
+        RDF.List,
+    ]
     for tipo in tipos_ignorados:
         if tipo in tipos:
             tipos.remove(tipo)
@@ -118,7 +125,11 @@ def _eliminar_tipos_ignorados(tipos: set[Node]):
     tipos_ignorados_si_ya_hay = {
         RUTA.Nodo: [RUTA.Interseccion],
         GEO.SpatialThing: [RUTA.Interseccion, RUTA.Carrera, RUTA.Autopista],
-        RUTA.Via: [RUTA.Carrera, RUTA.Autopista],
+        RUTA.Via: [
+            RUTA.Carrera,
+            RUTA.Autopista,
+            RUTA.Interseccion,
+        ],  # FIXME: intersecicon no deberia estar aqui
     }
     for tipo, alternativas in tipos_ignorados_si_ya_hay.items():
         if tipo in tipos:
@@ -139,6 +150,7 @@ def _traducir_atributos(
     atributos = {}
 
     for pred, objs in datos.items():
+        print(f"\tTraduciendo predicado {pred}")
         # se traduce el predicado a un nombre de atributo
         llave, valor = _traducir_atributo(tripletas, pred, objs)
         if llave is None:
@@ -202,6 +214,14 @@ def _traducir_atributo(
             return "fluidez", _literal(objs)
         case RUTA.tieneVelocidadMaxima:
             return "velocidad_maxima", _literal(objs)
+        case RUTA.estaEnVia:
+            return "via", _uri_ref_nombre(tripletas, objs)
+        case RUTA.esBidireccional:
+            return "es_bidireccional", _literal(objs)
+        case DC.title:
+            # FIXME confirmar
+            # se ignora porque ya se incluye en las subpropiedades
+            return (None, None)
         case _:
             raise Exception(f"se encontró un predicado desconocido: {pred}")
 
