@@ -99,7 +99,7 @@ def _traducir_tipo(tipos: set[Node]) -> tuple[type[Fact] | None, str | None]:
             return Via, "transversal"
         case RUTA.Interseccion:
             return Nodo, "intersección"
-        case RUTA.Punto_de_referencia:
+        case RUTA.PuntoReferencia:
             return Nodo, "Punto_de_referencia"
         case RUTA.Semaforo:
             return Semaforo, None
@@ -116,6 +116,11 @@ def _traducir_tipo(tipos: set[Node]) -> tuple[type[Fact] | None, str | None]:
 def _es_instancia(tipos: set[Node]):
     """
     Retorna True si el sujeto asociado a los `tipos` es una instancia
+    Las siguientes no se consideran instancias:
+        - Definiciones de clases
+        - Definiciones de propiedades
+        - Definiciones de tipos de datos
+        - Definiciones de listas
     """
 
     tipos_que_no_son_instancias = {
@@ -132,9 +137,7 @@ def _es_instancia(tipos: set[Node]):
 def _eliminar_tipos_ignorados(tipos: set[Node]):
     """
     Elimina los siguientes tipos del `set` `tipos`:
-        - Definiciones de clases
-        - Definiciones de propiedades
-        - Definiciones de tipos de datos
+        - RDFS.Resource
         - Clases si ya hay una subclase más específica
     """
 
@@ -147,7 +150,7 @@ def _eliminar_tipos_ignorados(tipos: set[Node]):
     # eliminar tipos en las llaves del diccionario `tipos_ignorados_si_ya_hay` si existe alguno de
     # los tipos en el valor del diccionario
     tipos_ignorados_si_ya_hay = {
-        RUTA.Nodo: [RUTA.Interseccion],
+        RUTA.Nodo: [RUTA.Interseccion, RUTA.PuntoReferencia],
         GEO.SpatialThing: [
             RUTA.Interseccion,
             RUTA.Carrera,
@@ -155,18 +158,15 @@ def _eliminar_tipos_ignorados(tipos: set[Node]):
             RUTA.Transversal,
             RUTA.Calle,
             RUTA.Avenida,
+            RUTA.PuntoReferencia,
         ],
         RUTA.Via: [
             RUTA.Carrera,
             RUTA.Autopista,
-            RUTA.Interseccion,
             RUTA.Calle,
             RUTA.Avenida,
             RUTA.Transversal,
-        ],  # FIXME: intersecicon no deberia estar aqui
-        RUTA.PuntoReferencia: [
-            RUTA.Interseccion
-        ],  # FIXME: esta linea no deberia estar aqui
+        ],
     }
     for tipo, alternativas in tipos_ignorados_si_ya_hay.items():
         if tipo in tipos:

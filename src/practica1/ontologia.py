@@ -519,14 +519,16 @@ intersecta(intersecciones["Interseccion51"], intersecciones["Interseccion26"],RU
 intersecta(intersecciones["Interseccion51"], intersecciones["Interseccion47"],RUTA.Calle49B)
 
 #Intersecciones accesibles desde Puntos de referencia
-g.add((estadio,RUTA.conectaCon,intersecciones["Interseccion25"]))
-g.add((estacion,RUTA.conectaCon,intersecciones["Interseccion30"]))
-g.add((exito,RUTA.conectaCon,intersecciones["Interseccion41"]))
-g.add((luisamigo,RUTA.conectaCon,intersecciones["Interseccion20"]))
-g.add((carlose,RUTA.conectaCon,intersecciones["Interseccion36"]))
-g.add((piloto,RUTA.conectaCon,intersecciones["Interseccion9"]))
-g.add((unal,RUTA.conectaCon,intersecciones["Interseccion5"]))
-g.add((unal,RUTA.conectaCon,intersecciones["Interseccion6"]))
+# FIXME: estas líneas hacen que el sujeto sea tanto via como intersección/PuntoReferencia, eso
+# tiene sentido?
+# g.add((estadio,RUTA.conectaCon,intersecciones["Interseccion25"]))
+# g.add((estacion,RUTA.conectaCon,intersecciones["Interseccion30"]))
+# g.add((exito,RUTA.conectaCon,intersecciones["Interseccion41"]))
+# g.add((luisamigo,RUTA.conectaCon,intersecciones["Interseccion20"]))
+# g.add((carlose,RUTA.conectaCon,intersecciones["Interseccion36"]))
+# g.add((piloto,RUTA.conectaCon,intersecciones["Interseccion9"]))
+# g.add((unal,RUTA.conectaCon,intersecciones["Interseccion5"]))
+# g.add((unal,RUTA.conectaCon,intersecciones["Interseccion6"]))
 
 #Agregar semáforos a las vías
 def agregar_semaforo(via, tiempo):
