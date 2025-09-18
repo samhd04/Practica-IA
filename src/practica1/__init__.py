@@ -13,7 +13,14 @@ def main() -> None:
     motor = Motor()
     motor.reset()
 
-    for hecho in traducir(g):
-        motor.declare(hecho)
+    # traducción del grafo de ontologias a hechos del sistema experto
+    hechos = traducir(g)
+
+    print("Traducción completada")
+
+    print("\nHechos traducidos:", *map(repr, hechos), sep="\n\t")
+
+    # declaramos los hechos en el motor
+    motor.declare(*hechos)
 
     motor.run()
