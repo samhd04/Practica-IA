@@ -11,9 +11,11 @@ class Via(Fact):
     Representa una vía por la cual transitan carros
     Atributos:
         - nombre: el nombre de la vía
-        - tipo: calle | avenida | autopista
-        - velocidad_media: un valor de tipo float en metros/minuto
+        - tipo: calle | avenida | autopista | carrera
+        - velocidad_media: un valor de tipo float en kilometros/hora
+        - velocidad_maxima: un valor de tipo float en kilometros/hora
         - longitud: longitud de la vía en metros
+        - fluidez: Muy mala | Mala | Aceptable | Buena | Muy buena
     """
 
 
@@ -24,6 +26,8 @@ class Nodo(Fact):
         - tipo: Punto_de_referencia | intersección
         - nombre: Si es un punto de referencia, el nombre de este
         - vias_conectadas: Si es una intersección, las vías que esta conecta
+        - se_relaciona_con: ... FIXME
+        - intersecta_con: ... FIXME
     """
 
 
@@ -66,6 +70,7 @@ class Recomendacion(Fact):
     """
 
 
+# FIXME quitar esta clase de hecho:
 class Fluidez(Fact):
     """
     Representa la fluidez de una vía
@@ -216,6 +221,7 @@ class Motor(KnowledgeEngine):
         """
         Cálculo inicial del tiempo estimado que toma atravesar una via
         """
+        # FIXME: corregir este calculo teniendo en cuenta las unidades
         tiempo = longitud / velocidad_media
         print(f"Cálculo inicial de tiempo estimado para via {nombre}: {tiempo}")
         hecho = self.declare(TiempoVia(via=nombre, tiempo_estimado=tiempo))

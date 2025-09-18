@@ -3,9 +3,9 @@ Traductor del componente de la ontología al sistema experto
 """
 
 from typing import Any, Sequence
-from rdflib import RDF, RDFS, Graph, Node, URIRef, Literal
+from rdflib import RDF, RDFS, XSD, BNode, Graph, Node, URIRef, Literal
 from experta import Fact
-from practica1.ontologia import ex
+from practica1.ontologia import RUTA, GEO
 from practica1.sistema_experto import Evento, Nodo, Ruta, Semaforo, Via
 from collections import defaultdict
 
@@ -33,6 +33,8 @@ def traducir(g: Graph) -> Sequence[Fact]:
 
     # En este ciclo for se realiza la traducción
     for subj, datos in tripletas.items():
+        print()
+        print(f"Traduciendo sujeto {subj} con datos {datos}")
         # traducción del tipo RDF.type a una clase de hecho:
         tipo_clase, tipo_atributo = _traducir_tipo(datos[RDF.type])
 
@@ -61,12 +63,10 @@ def traducir(g: Graph) -> Sequence[Fact]:
 def _traducir_tipo(tipos: set[Node]) -> tuple[type[Fact] | None, str | None]:
     """
     Recibe un `set` de tipos (objetos del predicado RDF.type) y retorna la clase de hecho
-    correspondiente, junto a un tipo, si es necesario (o None si no lo es).
+    correspondiente, junto a un string tipo (valor del atributo tipo de esa clase de hecho), si
+    es necesario (o None si no lo es).
 
-    Retorna None si el tipo es uno de los siguientes:
-        - RDFS.Class
-        - RDF.Property
-        - RDFS.Resource
+    Retorna (None, None) si el tipo no se refiere a una instancia:
     """
     _eliminar_tipos_ignorados(tipos)
 
@@ -76,22 +76,24 @@ def _traducir_tipo(tipos: set[Node]) -> tuple[type[Fact] | None, str | None]:
     assert len(tipos) == 1, f"hay más de un tipo: {tipos}"
 
     match next(iter(tipos)):
-        case ex.Calle:
+        case RUTA.Calle:
             return Via, "calle"
-        case ex.Avenida:
+        case RUTA.Avenida:
             return Via, "avenida"
-        case ex.Autopista:
+        case RUTA.Autopista:
             return Via, "autopista"
-        case ex.Interseccion:
+        case RUTA.Interseccion:
             return Nodo, "intersección"
-        case ex.Punto_de_referencia:
+        case RUTA.Punto_de_referencia:
             return Nodo, "Punto_de_referencia"
-        case ex.Semaforo:
+        case RUTA.Semaforo:
             return Semaforo, None
-        case ex.Evento:
+        case RUTA.Evento:
             return Evento, None
-        case ex.Ruta:
+        case RUTA.Ruta:
             return Ruta, None
+        case RUTA.Carrera:
+            return Via, "carrera"
         case tipo:
             raise Exception(f"se intentó traducir un tipo desconocido: {tipo}")
 
@@ -99,15 +101,31 @@ def _traducir_tipo(tipos: set[Node]) -> tuple[type[Fact] | None, str | None]:
 def _eliminar_tipos_ignorados(tipos: set[Node]):
     """
     Elimina los siguientes tipos del `set` `tipos`:
-        - RDFS.Class
-        - RDF.Property
-        - RDFS.Resource
+        - Definiciones de clases
+        - Definiciones de propiedades
+        - Definiciones de tipos de datos
+        - Clases si ya hay una subclase más específica
     """
 
-    tipos_ignorados = [RDFS.Class, RDFS.Resource, RDF.Property]
+    # eliminar tipos en `tipos_ignorados`
+    tipos_ignorados = [RDFS.Class, RDFS.Resource, RDF.Property, XSD.boolean, RDF.List]
     for tipo in tipos_ignorados:
         if tipo in tipos:
             tipos.remove(tipo)
+
+    # eliminar tipos en las llaves del diccionario `tipos_ignorados_si_ya_hay` si existe alguno de
+    # los tipos en el valor del diccionario
+    tipos_ignorados_si_ya_hay = {
+        RUTA.Nodo: [RUTA.Interseccion],
+        GEO.SpatialThing: [RUTA.Interseccion, RUTA.Carrera, RUTA.Autopista],
+        RUTA.Via: [RUTA.Carrera, RUTA.Autopista],
+    }
+    for tipo, alternativas in tipos_ignorados_si_ya_hay.items():
+        if tipo in tipos:
+            for alternativa in alternativas:
+                if alternativa in tipos:
+                    tipos.remove(tipo)
+                    break
 
 
 def _traducir_atributos(
@@ -123,6 +141,8 @@ def _traducir_atributos(
     for pred, objs in datos.items():
         # se traduce el predicado a un nombre de atributo
         llave, valor = _traducir_atributo(tripletas, pred, objs)
+        if llave is None:
+            continue
         atributos[llave] = valor
 
     return atributos
@@ -130,7 +150,7 @@ def _traducir_atributos(
 
 def _traducir_atributo(
     tripletas: Tripletas, pred: Node, objs: set[Node]
-) -> tuple[str, Any]:
+) -> tuple[str | None, Any | None]:
     """
     Traduce un predicado con sus objetos de un grafo de ontologías a una tupla (atributo, valor)
     para ser usado en la creación de un hecho del sistema experto
@@ -142,17 +162,46 @@ def _traducir_atributo(
         Una tupla con los siguientes valores:
         - el nombre del atributo
         - el valor del atributo
+        Puede retornar (None, None) si se debería ignorar este atributo
     """
 
     match pred:
-        case ex.nombre:
+        case RUTA.nombre:
             return "nombre", _literal(objs)
-        case ex.tipo:
+        case RUTA.tipo:
             return "tipo", _literal(objs)
-        case ex.via:
+        case RUTA.via:
             return "via", _uri_ref_nombre(tripletas, objs)
-        case ex.afectaVia:
+        case RUTA.afectaVia:
             return "afecta_via", _uri_ref_nombre(tripletas, objs)
+        case RUTA.seRelacionaCon:
+            # FIXME: confirmar esta traducción
+            return "se_relaciona_con", _uri_ref_nombres(tripletas, objs)
+        case RUTA.conectaCon:
+            return "vias_conectadas", _uri_ref_nombres(tripletas, objs)
+        case RUTA.tieneSemaforo:
+            # FIXME confirmar
+            # se ignora porque ya se agrega esta información con la propiedad estaEnVia
+            # del semaforo
+            return None, None
+        case RUTA.tieneSemaforoObj:
+            # FIXME confirmar
+            # se ignora porque ya se agrega esta información con la propiedad estaEnVia
+            # del semaforo
+            return None, None
+        case RUTA.esConectada:
+            # FIXME confirmar
+            # se ignora porque ya se agrega esta información con la propiedad conectaCon
+            # de la intersección
+            return None, None
+        case RUTA.tiempoEspera:
+            return "tiempo_espera", _literal(objs)
+        case RUTA.intersectaCon:
+            return "intersecta_con", _uri_ref_nombres(tripletas, objs)
+        case RUTA.fluidez:
+            return "fluidez", _literal(objs)
+        case RUTA.tieneVelocidadMaxima:
+            return "velocidad_maxima", _literal(objs)
         case _:
             raise Exception(f"se encontró un predicado desconocido: {pred}")
 
@@ -176,8 +225,23 @@ def _uri_ref_nombre(tripletas: Tripletas, objs: set[Node]) -> str:
     assert len(objs) == 1
     obj = next(iter(objs))
     assert isinstance(obj, URIRef)
-    nombre = tripletas[obj][URIRef(ex.nombre)]
+    nombre = tripletas[obj][URIRef(RUTA.nombre)]
     return _literal(nombre)
+
+
+def _uri_ref_nombres(tripletas: Tripletas, objs: set[Node]) -> list[str]:
+    """
+    Retorna los nombres de los elementos de `objs` verificando que dichos elementos son URIRef o BNode que además tienen un predicado ex:nombre
+    """
+    nombres = []
+    for obj in objs:
+        if isinstance(obj, URIRef):
+            nombre = tripletas[obj][URIRef(RUTA.nombre)]
+            nombres.append(_literal(nombre))
+        elif isinstance(obj, BNode):
+            nombre = str(obj)
+            nombres.append(nombre)
+    return nombres
 
 
 # FIXME: probablemente al final sería mejor quitar los Exception e imprimir en su lugar
