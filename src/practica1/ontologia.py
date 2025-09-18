@@ -119,7 +119,12 @@ g.add((RUTA.intersectaCon, RDFS.subPropertyOf, RUTA.seRelacionaCon))
 g.add((RUTA.intersectaCon,RDFS.domain,RUTA.Interseccion))
 g.add((RUTA.intersectaCon,RDFS.range,RUTA.Interseccion))
 
-#Conecciones entre nodos y vías
+#Interseccion:
+g.add((RUTA.numero,RDF.type,RDF.Property))
+g.add((RUTA.numero,RDFS.domain,RUTA.Interseccion))
+g.add((RUTA.numero,RDFS.range,XSD.integer))
+
+#Conecciones entre nodos e interseccion
 g.add((RUTA.conectaCon,RDF.type,RDF.Property))
 g.add((RUTA.conectaCon,RDFS.domain,RUTA.Interseccion))
 g.add((RUTA.conectaCon,RDFS.range,RUTA.Via))
@@ -521,14 +526,14 @@ intersecta(intersecciones["Interseccion51"], intersecciones["Interseccion47"],RU
 #Intersecciones accesibles desde Puntos de referencia
 # FIXME: estas líneas hacen que el sujeto sea tanto via como intersección/PuntoReferencia, eso
 # tiene sentido?
-# g.add((estadio,RUTA.conectaCon,intersecciones["Interseccion25"]))
-# g.add((estacion,RUTA.conectaCon,intersecciones["Interseccion30"]))
-# g.add((exito,RUTA.conectaCon,intersecciones["Interseccion41"]))
-# g.add((luisamigo,RUTA.conectaCon,intersecciones["Interseccion20"]))
-# g.add((carlose,RUTA.conectaCon,intersecciones["Interseccion36"]))
-# g.add((piloto,RUTA.conectaCon,intersecciones["Interseccion9"]))
-# g.add((unal,RUTA.conectaCon,intersecciones["Interseccion5"]))
-# g.add((unal,RUTA.conectaCon,intersecciones["Interseccion6"]))
+g.add((estadio,RUTA.seRelacionaCon,intersecciones["Interseccion25"]))
+g.add((estacion,RUTA.seRelacionaCon,intersecciones["Interseccion30"]))
+g.add((exito,RUTA.seRelacionaCon,intersecciones["Interseccion41"]))
+g.add((luisamigo,RUTA.seRelacionaCon,intersecciones["Interseccion20"]))
+g.add((carlose,RUTA.seRelacionaCon,intersecciones["Interseccion36"]))
+g.add((piloto,RUTA.seRelacionaCon,intersecciones["Interseccion9"]))
+g.add((unal,RUTA.seRelacionaCon,intersecciones["Interseccion5"]))
+g.add((unal,RUTA.seRelacionaCon,intersecciones["Interseccion6"]))
 
 #Agregar semáforos a las vías
 def agregar_semaforo(via, tiempo):
