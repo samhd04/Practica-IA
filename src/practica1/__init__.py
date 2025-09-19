@@ -24,3 +24,5 @@ def main() -> None:
     motor.declare(*hechos)
 
     motor.run()
+
+main()

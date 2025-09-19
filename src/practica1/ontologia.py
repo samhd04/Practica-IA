@@ -96,6 +96,10 @@ g.add((RUTA.tiempoEstimado,RDF.type,RDF.Property))
 g.add((RUTA.tiempoEstimado,RDFS.domain,RUTA.Ruta))
 g.add((RUTA.tiempoEstimado,RDFS.range,XSD.double))
 
+g.add((RUTA.tieneNumero,RDF.type,RDF.Property))
+g.add((RUTA.tieneNumero,RDFS.domain,RUTA.Interseccion))
+g.add((RUTA.tieneNumero,RDFS.range,XSD.integer))
+
 #Evento:
 g.add((RUTA.tipo,RDF.type,RDF.Property))
 g.add((RUTA.tipo,RDFS.domain,RUTA.Evento))
