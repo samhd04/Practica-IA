@@ -7,7 +7,7 @@
     let
       inherit (nixpkgs) lib;
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
-      python = pkgs.python3;
+      python = pkgs.python3Full;
     in
     {
       devShells.x86_64-linux = {

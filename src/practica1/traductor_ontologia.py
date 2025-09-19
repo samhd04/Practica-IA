@@ -42,14 +42,20 @@ def traducir(g: Graph) -> Sequence[Fact]:
 
     # En este ciclo for se realiza la traducción
     for subj, datos in tripletas.items():
-        print()
-        print(f"Traduciendo sujeto {subj} con datos {datos}")
+        # print()
+        # print(f"Traduciendo sujeto {subj} con datos {datos}")
         # traducción del tipo RDF.type a una clase de hecho:
         tipo_clase, tipo_atributo = _traducir_tipo(datos[RDF.type])
 
         # si `tipo` es None, no es una instancia y no nos interesa agregarlo a la lista de hechos
         if tipo_clase is None:
             print(f"Advertencia: ignorando {subj}")  # TODO: eliminar esto
+            print()
+            print(f"\t{datos}")
+            print()
+            print()
+            print()
+            print()
             continue
 
         # ya traducimos el tipo entonces lo eliminamos de los datos que quedan por traducir
@@ -129,6 +135,7 @@ def _es_instancia(tipos: set[Node]):
         XSD.boolean,
         XSD.string,
         XSD.double,
+        XSD.integer,
         RDF.List,
     }
     return len(tipos.intersection(tipos_que_no_son_instancias)) == 0
@@ -187,7 +194,7 @@ def _traducir_atributos(
     atributos = {}
 
     for pred, objs in datos.items():
-        print(f"\tTraduciendo predicado {pred}")
+        # print(f"\tTraduciendo predicado {pred}")
         # se traduce el predicado a un nombre de atributo
         llave, valor = _traducir_atributo(tripletas, pred, objs)
         if llave is None:
@@ -256,9 +263,7 @@ def _traducir_atributo(
         case RUTA.esBidireccional:
             return "es_bidireccional", _literal(objs)
         case DC.title:
-            # FIXME confirmar
-            # se ignora porque ya se incluye en las subpropiedades
-            return (None, None)
+            return "nombre", _literal(objs)
         case RUTA.tieneDistancia:
             return "distancia", _literal(objs)
         case RUTA.tieneVias:

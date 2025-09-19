@@ -12,7 +12,7 @@ class Via(Fact):
     Atributos:
         - nombre: el nombre de la vía
         - tipo: calle | avenida | autopista | carrera | transversal
-        - velocidad_media: un valor de tipo float en kilometros/hora
+        - velocidad_media: un valor de tipo float en kilometros/hora FIXME: quitar este?
         - velocidad_maxima: un valor de tipo float en kilometros/hora
         - longitud: longitud de la vía en metros
         - fluidez: Muy mala | Mala | Aceptable | Buena | Muy buena
@@ -216,17 +216,18 @@ class Motor(KnowledgeEngine):
     @Rule(
         Via(
             nombre=MATCH.nombre,
-            velocidad_media=MATCH.velocidad_media,
+            velocidad_maxima=MATCH.velocidad_maxima,
             longitud=MATCH.longitud,
         ),
         NOT(TiempoVia(via=MATCH.nombre)),
+        salience=5
     )
-    def calcular_tiempo_via(self, nombre, velocidad_media, longitud):
+    def calcular_tiempo_via(self, nombre, velocidad_maxima, longitud):
         """
         Cálculo inicial del tiempo estimado que toma atravesar una via
         """
         # FIXME: corregir este calculo teniendo en cuenta las unidades
-        tiempo = longitud / velocidad_media
+        tiempo = longitud / velocidad_maxima
         print(f"Cálculo inicial de tiempo estimado para via {nombre}: {tiempo}")
         hecho = self.declare(TiempoVia(via=nombre, tiempo_estimado=tiempo))
         self.__tiempos_via[nombre] = hecho

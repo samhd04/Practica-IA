@@ -96,10 +96,6 @@ g.add((RUTA.tiempoEstimado,RDF.type,RDF.Property))
 g.add((RUTA.tiempoEstimado,RDFS.domain,RUTA.Ruta))
 g.add((RUTA.tiempoEstimado,RDFS.range,XSD.double))
 
-g.add((RUTA.tieneNumero,RDF.type,RDF.Property))
-g.add((RUTA.tieneNumero,RDFS.domain,RUTA.Interseccion))
-g.add((RUTA.tieneNumero,RDFS.range,XSD.integer))
-
 #Evento:
 g.add((RUTA.tipo,RDF.type,RDF.Property))
 g.add((RUTA.tipo,RDFS.domain,RUTA.Evento))
@@ -122,11 +118,6 @@ g.add((RUTA.intersectaCon,RDF.type,RDF.Property))
 g.add((RUTA.intersectaCon, RDFS.subPropertyOf, RUTA.seRelacionaCon))
 g.add((RUTA.intersectaCon,RDFS.domain,RUTA.Interseccion))
 g.add((RUTA.intersectaCon,RDFS.range,RUTA.Interseccion))
-
-#Interseccion:
-g.add((RUTA.numero,RDF.type,RDF.Property))
-g.add((RUTA.numero,RDFS.domain,RUTA.Interseccion))
-g.add((RUTA.numero,RDFS.range,XSD.integer))
 
 #Conecciones entre nodos e interseccion
 g.add((RUTA.conectaCon,RDF.type,RDF.Property))
@@ -412,6 +403,7 @@ intersecciones = {f"Interseccion{i}": BNode() for i in range(1, 52)}
 
 for nombre, nodo in intersecciones.items():
     g.add((nodo, RDF.type, RUTA.Interseccion))
+    g.add((nodo, DC.title, Literal(nombre)))
 
 def intersecta(nodo1, nodo2, via):
     g.add((nodo1, RUTA.intersectaCon, nodo2))
@@ -528,8 +520,6 @@ intersecta(intersecciones["Interseccion51"], intersecciones["Interseccion26"],RU
 intersecta(intersecciones["Interseccion51"], intersecciones["Interseccion47"],RUTA.Calle49B)
 
 #Intersecciones accesibles desde Puntos de referencia
-# FIXME: estas líneas hacen que el sujeto sea tanto via como intersección/PuntoReferencia, eso
-# tiene sentido?
 g.add((estadio,RUTA.seRelacionaCon,intersecciones["Interseccion25"]))
 g.add((estacion,RUTA.seRelacionaCon,intersecciones["Interseccion30"]))
 g.add((exito,RUTA.seRelacionaCon,intersecciones["Interseccion41"]))
@@ -569,11 +559,12 @@ agregar_semaforo(RUTA.Carrera64B, 30.0)
 print('Tripletas elaboradas a mano:',len(g),'\n')
 
 #Método para crear rutas
-def crear_ruta(vias, distancia, tiempo):
+def crear_ruta(vias, distancia, tiempo, numero):
     ruta = BNode()
     g.add((ruta, RDF.type, RUTA.Ruta))
     g.add((ruta, RUTA.tieneDistancia, Literal(distancia, datatype=XSD.double)))
     g.add((ruta, RUTA.tiempoEstimado, Literal(tiempo, datatype=XSD.double)))
+    g.add((ruta, DC.title, Literal(f"Ruta{numero}")))
 
     lista_vias = BNode()
     Collection(g, lista_vias, vias)
@@ -583,8 +574,9 @@ def crear_ruta(vias, distancia, tiempo):
 
 ruta1 = crear_ruta(
     [RUTA.Carrera65, RUTA.Calle53, RUTA.Carrera73],
-    distancia=2.5, 
-    tiempo=8.0
+    distancia=2.5,
+    tiempo=8.0,
+    numero=1
 )
 
 #Razonador
