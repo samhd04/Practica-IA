@@ -6,6 +6,7 @@ from rdflib import Graph, Namespace, URIRef, BNode, Literal
 from rdflib.namespace import RDF, RDFS, XSD, DC, GEO
 from rdflib.collection import Collection
 from owlrl import DeductiveClosure, RDFS_Semantics
+import networkx as nx
 
 g = Graph()
 
@@ -50,10 +51,6 @@ g.add((RUTA.nombre, RDFS.subPropertyOf, DC.title))
 g.add((RUTA.nombre,RDFS.domain,RUTA.Via))
 g.add((RUTA.nombre,RDFS.range,XSD.string))
 
-g.add((RUTA.fluidez,RDF.type,RDF.Property))
-g.add((RUTA.fluidez,RDFS.domain,RUTA.Via))
-g.add((RUTA.fluidez,RDFS.range,XSD.string))
-
 g.add((RUTA.tieneSemaforo,RDF.type,RDF.Property))
 g.add((RUTA.tieneSemaforo,RDFS.domain,RUTA.Via))
 g.add((RUTA.tieneSemaforo,RDFS.range,XSD.boolean))
@@ -70,6 +67,11 @@ g.add((RUTA.esBidireccional,RDF.type,RDF.Property))
 g.add((RUTA.esBidireccional,RDFS.domain,RUTA.Via))
 g.add((RUTA.esBidireccional,RDFS.range,XSD.boolean))
 
+#Interseccion
+g.add((RUTA.numero,RDF.type,RDF.Property))
+g.add((RUTA.numero,RDFS.domain,RUTA.Interseccion))
+g.add((RUTA.numero,RDFS.range,XSD.integer))
+
 #Semáforo
 g.add((RUTA.tiempoEspera,RDF.type,RDF.Property))
 g.add((RUTA.tiempoEspera,RDFS.domain,RUTA.Semaforo))
@@ -84,17 +86,17 @@ g.add((RUTA.estaEnVia,RDFS.domain,RUTA.Semaforo))
 g.add((RUTA.estaEnVia,RDFS.range,RUTA.Via))
 
 #Ruta:
-g.add((RUTA.tieneVias,RDF.type,RDF.Property))
-g.add((RUTA.tieneVias,RDFS.domain,RUTA.Ruta))
-#g.add((RUTA.tieneVias,RDFS.range,Collection(g, BNode())))
+g.add((RUTA.tieneNodos,RDF.type,RDF.Property))
+g.add((RUTA.tieneNodos,RDFS.domain,RUTA.Ruta))
+g.add((RUTA.tieneNodos,RDFS.range,RUTA.Interseccion))
 
-g.add((RUTA.tieneDistancia,RDF.type,RDF.Property))
-g.add((RUTA.tieneDistancia,RDFS.domain,RUTA.Ruta))
-g.add((RUTA.tieneDistancia,RDFS.range,XSD.double))
+g.add((RUTA.origen, RDF.type, RDF.Property))
+g.add((RUTA.origen, RDFS.domain, RUTA.Ruta))
+g.add((RUTA.origen, RDFS.range, RUTA.Interseccion))
 
-g.add((RUTA.tiempoEstimado,RDF.type,RDF.Property))
-g.add((RUTA.tiempoEstimado,RDFS.domain,RUTA.Ruta))
-g.add((RUTA.tiempoEstimado,RDFS.range,XSD.double))
+g.add((RUTA.destino, RDF.type, RDF.Property))
+g.add((RUTA.destino, RDFS.domain, RUTA.Ruta))
+g.add((RUTA.destino, RDFS.range, RUTA.Interseccion))
 
 #Evento:
 g.add((RUTA.tipo,RDF.type,RDF.Property))
@@ -399,16 +401,25 @@ g.add((RUTA.Carrera64B,RUTA.tieneVelocidadMaxima,Literal(30.0)))
 g.add((RUTA.Carrera64B,RUTA.esBidireccional,Literal(False)))
 
 #Intersecciones:
-intersecciones = {f"Interseccion{i}": BNode() for i in range(1, 52)}
+intersecciones = dict()
 
-for nombre, nodo in intersecciones.items():
+for i in range(1, 52):
+    nodo = BNode()
+    intersecciones[f"Interseccion{i}"] = nodo
     g.add((nodo, RDF.type, RUTA.Interseccion))
-    g.add((nodo, DC.title, Literal(nombre)))
+    g.add((nodo, RUTA.numero, Literal(i, datatype=XSD.integer)))
 
 def intersecta(nodo1, nodo2, via):
     g.add((nodo1, RUTA.intersectaCon, nodo2))
     g.add((nodo1, RUTA.conectaCon, via))
     g.add((via, RUTA.esConectada, nodo2))
+
+    for _, _, bidir in g.triples((via, RUTA.esBidireccional, None)):
+        if bidir.toPython():  # True
+            g.add((nodo2, RUTA.intersectaCon, nodo1))
+            g.add((nodo2, RUTA.conectaCon, via))
+            g.add((via, RUTA.esConectada, nodo1))
+
 
 intersecta(intersecciones["Interseccion1"], intersecciones["Interseccion3"],RUTA.Calle55)
 intersecta(intersecciones["Interseccion2"], intersecciones["Interseccion3"],RUTA.BulevarLibertadores)
@@ -558,27 +569,6 @@ agregar_semaforo(RUTA.Carrera64B, 30.0)
 
 print('Tripletas elaboradas a mano:',len(g),'\n')
 
-#Método para crear rutas
-def crear_ruta(vias, distancia, tiempo, numero):
-    ruta = BNode()
-    g.add((ruta, RDF.type, RUTA.Ruta))
-    g.add((ruta, RUTA.tieneDistancia, Literal(distancia, datatype=XSD.double)))
-    g.add((ruta, RUTA.tiempoEstimado, Literal(tiempo, datatype=XSD.double)))
-    g.add((ruta, DC.title, Literal(f"Ruta{numero}")))
-
-    lista_vias = BNode()
-    Collection(g, lista_vias, vias)
-    g.add((ruta, RUTA.tieneVias, lista_vias))
-    
-    return ruta
-
-ruta1 = crear_ruta(
-    [RUTA.Carrera65, RUTA.Calle53, RUTA.Carrera73],
-    distancia=2.5,
-    tiempo=8.0,
-    numero=1
-)
-
 #Razonador
 
 #Guardamos las tripletas antes del razonamiento
@@ -631,3 +621,78 @@ for s, p, o in g:
 
 #Serialización final
 #print(g.serialize(format="turtle"))
+
+
+
+
+
+G = nx.DiGraph()
+
+for s, _, _ in g.triples((None, RDF.type, RUTA.Interseccion)):
+    G.add_node(s)
+
+for inter, _, via in g.triples((None, RUTA.conectaCon, None)):
+    for _, _, inter2 in g.triples((via, RUTA.esConectada, None)):
+        G.add_edge(inter, inter2, via=via)
+
+mapa_numeros = {}
+for s, _, num in g.triples((None, RUTA.numero, None)):
+    try:
+        mapa_numeros[s] = int(str(num))
+    except ValueError:
+        continue
+
+def rutas_sin_repetir_vias(G, inicio, fin, cutoff=10):
+    rutas = []
+    def dfs(actual, destino, camino, vias_usadas, depth):
+        if depth > cutoff:
+            return
+        if actual == destino:
+            rutas.append(list(camino))
+            return
+        for vecino in G.neighbors(actual):
+            via = G[actual][vecino]["via"]
+            if via in vias_usadas:
+                continue
+            camino.append((vecino, via))
+            dfs(vecino, destino, camino, vias_usadas | {via}, depth + 1)
+            camino.pop()
+    dfs(inicio, fin, [(inicio, None)], set(), 0)
+    return rutas
+
+def agregar_ruta_al_grafo(ruta, idx, origen, destino):
+    ruta_node = BNode()
+    g.add((ruta_node, RDF.type, RUTA.Ruta))
+    g.add((ruta_node, DC.title, Literal(f"Ruta{idx}")))
+    
+    # Origen y destino explícitos
+    g.add((ruta_node, RUTA.origen, origen))
+    g.add((ruta_node, RUTA.destino, destino))
+    
+    # Secuencia de intersecciones
+    nodos_ruta = [nodo for nodo, _ in ruta]
+    lista_nodos = BNode()
+    Collection(g, lista_nodos, nodos_ruta)
+    g.add((ruta_node, RUTA.tieneNodos, lista_nodos))
+    
+    return ruta_node
+
+puntos_referencia = [unal, estadio, exito, luisamigo, estacion, piloto, carlose]
+
+mapa_origen_destino = {}
+for punto in puntos_referencia:
+    for _, _, inter in g.triples((punto, RUTA.seRelacionaCon, None)):
+        mapa_origen_destino[punto] = inter
+
+contador = 1
+for p_origen, origen in mapa_origen_destino.items():
+    for p_destino, destino in mapa_origen_destino.items():
+        if origen == destino:
+            continue
+        rutas = rutas_sin_repetir_vias(G, origen, destino, cutoff=6)
+        for ruta in rutas:
+            agregar_ruta_al_grafo(ruta, contador, origen, destino)
+            contador += 1
+
+print("Total de tripletas con todas las rutas:", len(g))
+
