@@ -256,8 +256,8 @@ def _traducir_atributo(
             return "intersecta_con", _uri_ref_nombres(tripletas, objs)
         case RUTA.fluidez:
             return "fluidez", _literal(objs)
-        case RUTA.tieneVelocidadMaxima:
-            return "velocidad_maxima", _literal(objs)
+        case RUTA.velocidadPromedio:
+            return "velocidad_promedio", _literal(objs)
         case RUTA.estaEnVia:
             return "via", _uri_ref_nombre(tripletas, objs)
         case RUTA.esBidireccional:
