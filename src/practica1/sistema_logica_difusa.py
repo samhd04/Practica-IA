@@ -1,6 +1,7 @@
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
+from rdflib import Literal
 
 # 1. Definir las variables difusas
 # Variables de entrada

@@ -171,235 +171,228 @@ g.add((piloto,RDF.type,RUTA.PuntoReferencia))
 g.add((piloto,RUTA.tieneNombre,Literal("Biblioteca Pública Piloto")))
 
 #Eventos:
-g.add((RUTA.ObraVial,RDF.type,RUTA.Evento))
+g.add((RUTA.ObraVial,RDF.type,RUTA.Evento))#10
 g.add((RUTA.ObraVial,RUTA.tipo,Literal("Obra Vial")))
 g.add((RUTA.ObraVial,RUTA.duracion,Literal(360.0)))
 g.add((RUTA.ObraVial,RUTA.cierreTotal,Literal(True)))
 
-g.add((RUTA.AccidenteGrave,RDF.type,RUTA.Evento))
+g.add((RUTA.AccidenteGrave,RDF.type,RUTA.Evento))#5
 g.add((RUTA.AccidenteGrave,RUTA.tipo,Literal("Accidente Grave")))
 g.add((RUTA.AccidenteGrave,RUTA.duracion,Literal(30.0)))
 g.add((RUTA.AccidenteGrave,RUTA.cierreTotal,Literal(True)))
 
-g.add((RUTA.ObraMenor,RDF.type,RUTA.Evento))
+g.add((RUTA.ObraMenor,RDF.type,RUTA.Evento))#15
 g.add((RUTA.ObraMenor,RUTA.tipo,Literal("Obra Menor")))
 g.add((RUTA.ObraMenor,RUTA.duracion,Literal(360.0)))
 g.add((RUTA.ObraMenor,RUTA.cierreTotal,Literal(False)))
 
-g.add((RUTA.AccidenteLeve,RDF.type,RUTA.Evento))
+g.add((RUTA.AccidenteLeve,RDF.type,RUTA.Evento))#10
 g.add((RUTA.AccidenteLeve,RUTA.tipo,Literal("Accidente Leve")))
 g.add((RUTA.AccidenteLeve,RUTA.duracion,Literal(30.0)))
 g.add((RUTA.AccidenteLeve,RUTA.cierreTotal,Literal(False)))
 
-g.add((RUTA.Manifestacion,RDF.type,RUTA.Evento))
+g.add((RUTA.Manifestacion,RDF.type,RUTA.Evento))#10
 g.add((RUTA.Manifestacion,RUTA.tipo,Literal("Manifestacion")))
 g.add((RUTA.Manifestacion,RUTA.duracion,Literal(120.0)))
 g.add((RUTA.Manifestacion,RUTA.cierreTotal,Literal(True)))
 
-g.add((RUTA.VehiculoDetenido,RDF.type,RUTA.Evento))
+g.add((RUTA.VehiculoDetenido,RDF.type,RUTA.Evento))#30
 g.add((RUTA.VehiculoDetenido,RUTA.tipo,Literal("Vehiculo Detenido")))
 g.add((RUTA.VehiculoDetenido,RUTA.duracion,Literal(10.0)))
 g.add((RUTA.VehiculoDetenido,RUTA.cierreTotal,Literal(False)))
 
-g.add((RUTA.ColapsoEstructural,RDF.type,RUTA.Evento))
+g.add((RUTA.ColapsoEstructural,RDF.type,RUTA.Evento))#5
 g.add((RUTA.ColapsoEstructural,RUTA.tipo,Literal("Colapso Estructural")))
 g.add((RUTA.ColapsoEstructural,RUTA.duracion,Literal(10080.0)))
 g.add((RUTA.ColapsoEstructural,RUTA.cierreTotal,Literal(True)))
 
+def probabilidad(ruta):
+    u=random.random()
+    if u<0.1:
+        g.add((ruta,RUTA.afectadaPor,RUTA.ObraVial))
+    elif u<0.15:
+        g.add((ruta,RUTA.afectadaPor,RUTA.AccidenteGrave))
+    elif u<0.3:
+        g.add((ruta,RUTA.afectadaPor,RUTA.ObraMenor))
+    elif u<0.4:
+        g.add((ruta,RUTA.afectadaPor,RUTA.AccidenteLeve))
+    elif u<0.5:
+        g.add((ruta,RUTA.afectadaPor,RUTA.Manifestacion))
+    elif u<0.8:
+        g.add((ruta,RUTA.afectadaPor,RUTA.VehiculoDetenido))
+    elif u<0.85:
+        g.add((ruta,RUTA.afectadaPor,RUTA.ColapsoEstructural))
+
 #Autopista:
 g.add((RUTA.AutopistaSur,RDF.type,RUTA.Autopista))
 g.add((RUTA.AutopistaSur,RUTA.nombre,Literal("Autopista Sur")))
-#g.add((RUTA.AutopistaSur,RUTA.fluidez,Literal("Muy buena")))
 g.add((RUTA.AutopistaSur,RUTA.tieneSemaforo,Literal(False)))
-#g.add((RUTA.AutopistaSur,RUTA.afectadaPor,RUTA.Evento))
+probabilidad(RUTA.AutopistaSur)
 g.add((RUTA.AutopistaSur,RUTA.velocidadPromedio,Literal(float(random.randint(80, 100)))))
 g.add((RUTA.AutopistaSur,RUTA.esBidireccional,Literal(False)))
 
 #Avenida:
 g.add((RUTA.AvenidaColombia,RDF.type,RUTA.Avenida))
 g.add((RUTA.AvenidaColombia,RUTA.nombre,Literal("Avenida Colombia")))
-#g.add((RUTA.Avenida,RUTA.fluidez,Literal("Mala")))
 g.add((RUTA.AvenidaColombia,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.AvenidaColombia,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.AvenidaColombia)
 g.add((RUTA.AvenidaColombia,RUTA.velocidadPromedio,Literal(float(random.randint(40, 60)))))
 g.add((RUTA.AvenidaColombia,RUTA.esBidireccional,Literal(True)))
 
 #Transversal:
 g.add((RUTA.Transversal51a,RDF.type,RUTA.Transversal))
 g.add((RUTA.Transversal51a,RUTA.nombre,Literal("Transversal 51a")))
-#g.add((RUTA.Transversal51a,RUTA.fluidez,Literal("Buena")))
 g.add((RUTA.Transversal51a,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Transversal51a,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Transversal51a)
 g.add((RUTA.Transversal51a,RUTA.velocidadPromedio,Literal(float(random.randint(30, 40)))))
 g.add((RUTA.Transversal51a,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Transversal53A,RDF.type,RUTA.Transversal))
 g.add((RUTA.Transversal53A,RUTA.nombre,Literal("Transversal 53A")))
-#g.add((RUTA.Transversal53A,RUTA.fluidez,Literal("Muy buena")))
 g.add((RUTA.Transversal53A,RUTA.tieneSemaforo,Literal(False)))
-#g.add((RUTA.Transversal53A,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Transversal53A)
 g.add((RUTA.Transversal53A,RUTA.velocidadPromedio,Literal(float(random.randint(30, 40)))))
 g.add((RUTA.Transversal53A,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Transversal53B,RDF.type,RUTA.Transversal))
 g.add((RUTA.Transversal53B,RUTA.nombre,Literal("Transversal 53B")))
-#g.add((RUTA.Transversal53B,RUTA.fluidez,Literal("Muy buena")))
 g.add((RUTA.Transversal53B,RUTA.tieneSemaforo,Literal(False)))
-#g.add((RUTA.Transversal53B,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Transversal53B)
 g.add((RUTA.Transversal53B,RUTA.velocidadPromedio,Literal(float(random.randint(30, 40)))))
 g.add((RUTA.Transversal53B,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Diagonal63B,RDF.type,RUTA.Transversal))
 g.add((RUTA.Diagonal63B,RUTA.nombre,Literal("Diagonal 63B")))
-#g.add((RUTA.Diagonal63B,RUTA.fluidez,Literal("Muy Buena")))
 g.add((RUTA.Diagonal63B,RUTA.tieneSemaforo,Literal(False)))
-#g.add((RUTA.Diagonal63B,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Diagonal63B)
 g.add((RUTA.Diagonal63B,RUTA.velocidadPromedio,Literal(float(random.randint(30, 40)))))
 g.add((RUTA.Diagonal63B,RUTA.esBidireccional,Literal(False)))
 
 #Calle:
 g.add((RUTA.Calle55,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle55,RUTA.nombre,Literal("Calle 55")))
-#g.add((RUTA.Calle55,RUTA.fluidez,Literal("Aceptable")))
 g.add((RUTA.Calle55,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Calle55,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Calle55)
 g.add((RUTA.Calle55,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle55,RUTA.esBidireccional,Literal(True)))
 
 g.add((RUTA.Calle48,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle48,RUTA.nombre,Literal("Calle 48")))
-#g.add((RUTA.Calle48,RUTA.fluidez,Literal("Buena")))
 g.add((RUTA.Calle48,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Calle48,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Calle48)
 g.add((RUTA.Calle48,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle48,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Calle51,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle51,RUTA.nombre,Literal("Calle 51")))
-#g.add((RUTA.Calle51,RUTA.fluidez,Literal("Aceptable")))
 g.add((RUTA.Calle51,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Calle51,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Calle51)
 g.add((RUTA.Calle51,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle51,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Calle48D,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle48D,RUTA.nombre,Literal("Calle 48D")))
-#g.add((RUTA.Calle48D,RUTA.fluidez,Literal("Aceptable")))
 g.add((RUTA.Calle48D,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Calle48D,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Calle48D)
 g.add((RUTA.Calle48D,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle48D,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Calle49A,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle49A,RUTA.nombre,Literal("Calle 49A")))
-#g.add((RUTA.Calle49A,RUTA.fluidez,Literal("Buena")))
 g.add((RUTA.Calle49A,RUTA.tieneSemaforo,Literal(False)))
-#g.add((RUTA.Calle49A,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Calle49A)
 g.add((RUTA.Calle49A,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle49A,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Calle49B,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle49B,RUTA.nombre,Literal("Calle 49B")))
-#g.add((RUTA.Calle49B,RUTA.fluidez,Literal("Buena")))
 g.add((RUTA.Calle49B,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Calle49B,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Calle49B)
 g.add((RUTA.Calle49B,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle49B,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Calle53,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle53,RUTA.nombre,Literal("Calle 53")))
-#g.add((RUTA.Calle53,RUTA.fluidez,Literal("Aceptable")))
 g.add((RUTA.Calle53,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Calle53,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Calle53)
 g.add((RUTA.Calle53,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle53,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Calle52,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle52,RUTA.nombre,Literal("Calle 52")))
-#g.add((RUTA.Calle52,RUTA.fluidez,Literal("Buena")))
 g.add((RUTA.Calle52,RUTA.tieneSemaforo,Literal(False)))
-#g.add((RUTA.Calle52,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Calle52)
 g.add((RUTA.Calle52,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle52,RUTA.esBidireccional,Literal(False)))
 
 #Carrera
 g.add((RUTA.Carrera65,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera65,RUTA.nombre,Literal("Carrera 65")))
-#g.add((RUTA.Carrera65,RUTA.fluidez,Literal("Aceptable")))
 g.add((RUTA.Carrera65,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Carrera65,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Carrera65)
 g.add((RUTA.Carrera65,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera65,RUTA.esBidireccional,Literal(True)))
 
 g.add((RUTA.Carrera66,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera66,RUTA.nombre,Literal("Carrera 66")))
-#g.add((RUTA.Carrera66,RUTA.fluidez,Literal("Aceptable")))
 g.add((RUTA.Carrera66,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Carrera66,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Carrera66)
 g.add((RUTA.Carrera66,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera66,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Carrera67,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera67,RUTA.nombre,Literal("Carrera 67")))
-#g.add((RUTA.Carrera67,RUTA.fluidez,Literal("Aceptable")))
 g.add((RUTA.Carrera67,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Carrera67,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Carrera67)
 g.add((RUTA.Carrera67,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera67,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Carrera73,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera73,RUTA.nombre,Literal("Carrera 73")))
-#g.add((RUTA.Carrera73,RUTA.fluidez,Literal("Muy buena")))
 g.add((RUTA.Carrera73,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Carrera73,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Carrera73)
 g.add((RUTA.Carrera73,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera73,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Carrera74,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera74,RUTA.nombre,Literal("Carrera 74")))
-#g.add((RUTA.Carrera74,RUTA.fluidez,Literal("Mala")))
 g.add((RUTA.Carrera74,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Carrera74,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Carrera74)
 g.add((RUTA.Carrera74,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera74,RUTA.esBidireccional,Literal(True)))
 
 g.add((RUTA.Carrera67B,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera67B,RUTA.nombre,Literal("Carrera 67B")))
-#g.add((RUTA.Carrera67B,RUTA.fluidez,Literal("Mala")))
 g.add((RUTA.Carrera67B,RUTA.tieneSemaforo,Literal(False)))
-#g.add((RUTA.Carrera67B,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Carrera67B)
 g.add((RUTA.Carrera67B,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera67B,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.BulevarLibertadores,RDF.type,RUTA.Carrera))
 g.add((RUTA.BulevarLibertadores,RUTA.nombre,Literal("Bulevar Libertadores de América")))
-#g.add((RUTA.BulevarLibertadores,RUTA.fluidez,Literal("Muy mala")))
 g.add((RUTA.BulevarLibertadores,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.BulevarLibertadores,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.BulevarLibertadores)
 g.add((RUTA.BulevarLibertadores,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.BulevarLibertadores,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Carrera68,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera68,RUTA.nombre,Literal("Carrera 68")))
-#g.add((RUTA.Carrera68,RUTA.fluidez,Literal("Buena")))
 g.add((RUTA.Carrera68,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Carrera68,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Carrera68)
 g.add((RUTA.Carrera68,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera68,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Carrera64,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera64,RUTA.nombre,Literal("Carrera 64")))
-#g.add((RUTA.Carrera64,RUTA.fluidez,Literal("Buena")))
 g.add((RUTA.Carrera64,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Carrera64,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Carrera64)
 g.add((RUTA.Carrera64,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera64,RUTA.esBidireccional,Literal(False)))
 
 g.add((RUTA.Carrera64B,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera64B,RUTA.nombre,Literal("Carrera 64B")))
-#g.add((RUTA.Carrera64B,RUTA.fluidez,Literal("Muy Buena")))
 g.add((RUTA.Carrera64B,RUTA.tieneSemaforo,Literal(True)))
-#g.add((RUTA.Carrera64B,RUTA.afectadaPor,RUTA.ObraVial))
+probabilidad(RUTA.Carrera64B)
 g.add((RUTA.Carrera64B,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera64B,RUTA.esBidireccional,Literal(False)))
 
@@ -663,10 +656,10 @@ def rutas_sin_repetir_vias(G, inicio, fin, cutoff=10):
     dfs(inicio, fin, [(inicio, None)], set(), 0)
     return rutas
 
-def agregar_ruta_al_grafo(ruta, idx, origen, destino):
+def agregar_ruta_al_grafo(ruta, id, origen, destino):
     ruta_node = BNode()
     g.add((ruta_node, RDF.type, RUTA.Ruta))
-    g.add((ruta_node, DC.title, Literal(f"Ruta{idx}")))
+    g.add((ruta_node, DC.title, Literal(f"Ruta{id}")))
     
     # Origen y destino explícitos
     g.add((ruta_node, RUTA.origen, origen))
@@ -699,3 +692,16 @@ for p_origen, origen in mapa_origen_destino.items():
 
 print("Total de tripletas con todas las rutas:", len(g))
 
+
+inicio = intersecciones["Interseccion30"]
+fin = intersecciones["Interseccion20"]
+
+rutas = rutas_sin_repetir_vias(G, inicio, fin, cutoff=6)
+
+print(f"Se encontraron {len(rutas)} rutas:\n")
+for i, ruta in enumerate(rutas, 1):
+    partes = []
+    for nodo, via in ruta[1:]:
+        num = mapa_numeros.get(nodo, "?")
+        partes.append(f"{via.split('#')[-1]} → {num}")
+    print(f"Ruta {i}: " + " | ".join(partes))
