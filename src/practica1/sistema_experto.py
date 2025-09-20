@@ -4,7 +4,10 @@ Sistema experto, contiene definiciones de clases de hechos y el motor de inferen
 
 from collections import defaultdict
 from experta import MATCH, Fact, KnowledgeEngine, Rule, NOT
+import random
 
+from practica1.sistema_logica_difusa import calcular_fluidez_via
+random.seed(42)
 
 class Via(Fact):
     """
@@ -279,6 +282,55 @@ class Motor(KnowledgeEngine):
             if via in ruta["vias"]:
                 print(f"\tTambién eliminando ruta {ruta_nombre} que contiene esta via")
                 self.retract(ruta)
+
+    @Rule(
+    Via(nombre=MATCH.via_nombre, velocidad_promedio=MATCH.velocidad),
+    Semaforo(via=MATCH.via_nombre)
+    )
+    def calcular_fluidez_con_semaforo(self, via_nombre, velocidad):
+        """
+        Regla para calcular fluidez cuando la vía tiene semáforo.
+        La espera del semáforo se genera de forma aleatoria (30–120 segundos).
+        """
+        congestion_val = random.randint(0, 100)           # Congestión aleatoria
+        espera_val = random.randint(30, 120)              # Espera en segundos (Colombia)
+        
+        fluidez_literal = calcular_fluidez_via(congestion_val, velocidad, espera_val)
+
+        self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
+
+
+    @Rule(
+        Via(nombre=MATCH.via_nombre, velocidad_promedio=MATCH.velocidad),
+        NOT(Semaforo(via=MATCH.via_nombre))
+    )
+    def calcular_fluidez_sin_semaforo(self, via_nombre, velocidad):
+        """
+        Regla para calcular fluidez cuando la vía no tiene semáforo.
+        Espera en semáforo = 0.
+        """
+        congestion_val = random.randint(0, 100)   # Congestión aleatoria
+        espera_val = 0                            # No hay semáforo
+        
+        fluidez_literal = calcular_fluidez_via(congestion_val, velocidad, espera_val)
+
+        self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
+
+    @Rule(
+        Via(nombre=MATCH.via_nombre, velocidad_promedio=MATCH.velocidad),
+        NOT(Semaforo(via=MATCH.via_nombre))
+    )
+    def calcular_fluidez_sin_semaforo(self, via_nombre, velocidad):
+        """
+        Regla para calcular fluidez cuando la vía no tiene semáforo.
+        Espera en semáforo = 0.
+        """
+        congestion_val = random.randint(0, 100)   # Congestión aleatoria
+        espera_val = 0                            # No hay semáforo
+        
+        fluidez_literal = calcular_fluidez_via(congestion_val, velocidad, espera_val)
+
+        self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
 
     @Rule()
     def regla9(self):
