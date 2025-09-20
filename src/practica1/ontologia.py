@@ -73,7 +73,7 @@ g.add((RUTA.esBidireccional,RDFS.range,XSD.boolean))
 #Interseccion
 g.add((RUTA.numero,RDF.type,RDF.Property))
 g.add((RUTA.numero,RDFS.domain,RUTA.Interseccion))
-g.add((RUTA.numero,RDFS.range,XSD.integer))
+g.add((RUTA.numero,RDFS.range,XSD.string))
 
 #Semáforo
 g.add((RUTA.tiempoEspera,RDF.type,RDF.Property))

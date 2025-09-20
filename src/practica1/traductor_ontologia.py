@@ -226,14 +226,14 @@ def _traducir_atributo(
         case RUTA.tipo:
             return "tipo", _literal(objs)
         case RUTA.via:
-            return "via", _uri_ref_nombre(tripletas, objs)
+            return "via", _uri_ref_id(tripletas, objs)
         case RUTA.afectaVia:
-            return "afecta_via", _uri_ref_nombre(tripletas, objs)
+            return "afecta_via", _uri_ref_id(tripletas, objs)
         case RUTA.seRelacionaCon:
             # FIXME: confirmar esta traducción
-            return "se_relaciona_con", _uri_ref_nombres(tripletas, objs)
+            return "se_relaciona_con", _uri_ref_ids(tripletas, objs, id="numero")
         case RUTA.conectaCon:
-            return "vias_conectadas", _uri_ref_nombres(tripletas, objs)
+            return "vias_conectadas", _uri_ref_ids(tripletas, objs)
         case RUTA.tieneSemaforo:
             # FIXME confirmar
             # se ignora porque ya se agrega esta información con la propiedad estaEnVia
@@ -252,13 +252,13 @@ def _traducir_atributo(
         case RUTA.tiempoEspera:
             return "tiempo_espera", _literal(objs, xsd_type=XSD.double)
         case RUTA.intersectaCon:
-            return "intersecta_con", _uri_ref_nombres(tripletas, objs)
+            return "intersecta_con", _uri_ref_ids(tripletas, objs, id="numero")
         case RUTA.fluidez:
             return "fluidez", _literal(objs)
         case RUTA.velocidadPromedio:
             return "velocidad_promedio", _literal(objs, xsd_type=XSD.double)
         case RUTA.estaEnVia:
-            return "via", _uri_ref_nombre(tripletas, objs)
+            return "via", _uri_ref_id(tripletas, objs)
         case RUTA.esBidireccional:
             return "es_bidireccional", _literal(objs, xsd_type=XSD.boolean)
         case DC.title:
@@ -266,7 +266,7 @@ def _traducir_atributo(
         case RUTA.tieneDistancia:
             return "distancia", _literal(objs)
         case RUTA.tieneVias:
-            return "vias", _collection_nombres(tripletas, objs)
+            return "vias", _collection_ids(tripletas, objs)
         case RUTA.tiempoEstimado:
             return "tiempo_estimado", _literal(objs)
         case RUTA.cierreTotal:
@@ -276,13 +276,17 @@ def _traducir_atributo(
         case RUTA.tieneNombre:
             return "nombre", _literal(objs)
         case RUTA.origen:
-            return "origen", _bnode_nombre(objs)
+            return "origen", _bnode_id(tripletas, objs, "numero")
         case RUTA.destino:
-            return "origen", _bnode_nombre(objs)
+            return "destino", _bnode_id(tripletas, objs, "numero")
         case RUTA.tieneNodos:
-            return "tiene_nodos", _collection_nombres(tripletas, objs)
+            return "tiene_nodos", _collection_ids(tripletas, objs, id="numero")
         case RUTA.numero:
-            return "numero", _literal(objs, xsd_type=XSD.integer)
+            return "numero", _literal(objs)
+        case RUTA.numeracion:
+            return "numeracion", _literal(objs)
+        case RUTA.afectadaPor:
+            return "afectada_por", _uri_ref_ids(tripletas, objs, id="tipo")
         case _:
             raise Exception(f"se encontró un predicado desconocido: {pred}")
 
@@ -309,10 +313,10 @@ def _literal(objs: set[Node], xsd_type=None) -> Any:
     raise Exception(f"no se encontró un elemento con ese xsd_type: {objs}")
 
 
-def _uri_ref_nombre(tripletas: Tripletas, objs: set[Node]) -> str:
+def _uri_ref_id(tripletas: Tripletas, objs: set[Node], id="nombre") -> str:
     """
-    Retorna el nombre del primer elemento de `objs` verificando que en realidad solo hay un
-    elemento y que dicho elemento es un URIRef que además tiene un predicado RUTA:nombre
+    Retorna el id del primer elemento de `objs` verificando que en realidad solo hay un
+    elemento y que dicho elemento es un URIRef que además tiene un predicado RUTA:<id>
     """
     assert len(objs) == 1
     obj = next(iter(objs))
@@ -321,31 +325,35 @@ def _uri_ref_nombre(tripletas: Tripletas, objs: set[Node]) -> str:
     return _literal(nombre)
 
 
-def _bnode_nombre(objs: set[Node]) -> str:
+def _bnode_id(tripletas: Tripletas, objs: set[Node], id=None) -> str:
     """
-    Retorna la representación en string del primer elemento de `objs` verificando que solo hay un
-    elemento y que es un nodo blanco
+    Retorna la representación en string del primer elemento de `objs` verificando que solo hay
+    un elemento y que es un nodo blanco
+
+    O retorna el id (RUTA:<id>) si id es diferente de None
     """
     assert len(objs) == 1
     obj = next(iter(objs))
     assert isinstance(obj, BNode)
-    return str(obj)
+    if id is None:
+        return str(obj)
+    return _nodo_id(tripletas, obj, id)
 
 
-def _uri_ref_nombres(tripletas: Tripletas, objs: set[Node]) -> list[str]:
+def _uri_ref_ids(tripletas: Tripletas, objs: set[Node], id="nombre") -> list[str]:
     """
-    Retorna los nombres de los elementos de `objs` verificando que dichos elementos son URIRef o BNode que además tienen un predicado RUTA:nombre si son URIRef
+    Retorna los ids de los elementos de `objs` verificando que dichos elementos son URIRef o BNode que además tienen un predicado RUTA:<id> si son URIRef
     """
     nombres = []
     for obj in objs:
-        nombres.append(_nodo_nombre(tripletas, obj))
+        nombres.append(_nodo_id(tripletas, obj, id))
     return nombres
 
 
-def _collection_nombres(tripletas: Tripletas, objs: set[Node]) -> list[str]:
+def _collection_ids(tripletas: Tripletas, objs: set[Node], id="nombre") -> list[str]:
     """
-    Retorna una lista con los nombres de los elementos de `objs` verificando que `objs` contenga
-    una única collección cuyos elementos tengan valores para el predicado RUTA:nombre o sean nodos blancos
+    Retorna una lista con los ids de los elementos de `objs` verificando que `objs` contenga
+    una única collección cuyos elementos tengan valores para el predicado RUTA:<id> o sean nodos blancos
     """
     assert len(objs) == 1
     lista = next(iter(objs))
@@ -355,25 +363,20 @@ def _collection_nombres(tripletas: Tripletas, objs: set[Node]) -> list[str]:
     elementos = _recorrer_collection(tripletas, tripletas[lista])
 
     # obtener los RUTA:nombre de los elementos de la colleción
-    elementos = list(map(lambda e: _nodo_nombre(tripletas, e), elementos))
+    elementos = list(map(lambda e: _nodo_id(tripletas, e, id), elementos))
 
     return elementos
 
 
-def _nodo_nombre(tripletas: Tripletas, obj: Node) -> str:
+def _nodo_id(tripletas: Tripletas, obj: Node, id="nombre") -> str:
     """
-    Si `obj` (un sujeto del grafo de ontologias) es un URIRef, retorna el valor del predicado
-    RUTA:nombre asociado a dicho sujeto
-
-    Si `obj` es un BNode retorna la representación en string del BNode
+    Retorna el id (Ruta:<id>) asociado al sujeto `obj` o la representación en string de `obj` si id es None
     """
-    if isinstance(obj, URIRef):
-        nombre = tripletas[obj][RUTA.nombre]
+    if id is not None:
+        nombre = tripletas[obj][RUTA[id]]
         return _literal(nombre)
-    elif isinstance(obj, BNode):
+    else:
         return str(obj)
-
-    raise Exception(f"ni URIRef ni BNode: {obj}")
 
 
 def _recorrer_collection(tripletas: Tripletas, collection: Predicados) -> list[Node]:
