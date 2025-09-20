@@ -5,7 +5,7 @@ if not hasattr(collections, "Mapping"):
     setattr(collections, "Mapping", collections.abc.Mapping)
 
 from practica1.ontologia import g
-from practica1.sistema_experto import Motor
+from practica1.sistema_experto import Motor, Objetivo
 from practica1.traductor_ontologia import traducir
 
 
@@ -22,6 +22,8 @@ def main() -> None:
 
     # declaramos los hechos en el motor
     motor.declare(*hechos)
+
+    motor.declare(Objetivo(desde="Universidad Nacional de Colombia", hasta="Parque Carlos E. Restrepo")) # FIXME: quitar esto (es temporal)
 
     motor.run()
 
