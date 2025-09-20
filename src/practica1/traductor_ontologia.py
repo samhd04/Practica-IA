@@ -4,7 +4,6 @@ Traductor del componente de la ontología al sistema experto
 
 from typing import Any, Sequence
 from rdflib import RDF, RDFS, XSD, BNode, Graph, Node, URIRef, Literal, DC
-from rdflib.collection import Collection
 from experta import Fact
 from practica1.ontologia import RUTA, GEO
 from practica1.sistema_experto import Evento, Nodo, Ruta, Semaforo, Via
@@ -271,24 +270,43 @@ def _traducir_atributo(
         case RUTA.tiempoEstimado:
             return "tiempo_estimado", _literal(objs)
         case RUTA.cierreTotal:
-            return "cierre_total", _literal(objs)
+            return "cierre_total", _literal(objs, xsd_type=XSD.boolean)
         case RUTA.duracion:
             return "duracion", _literal(objs)
         case RUTA.tieneNombre:
             return "nombre", _literal(objs)
+        case RUTA.origen:
+            return "origen", _bnode_nombre(objs)
+        case RUTA.destino:
+            return "origen", _bnode_nombre(objs)
+        case RUTA.tieneNodos:
+            return "tiene_nodos", _collection_nombres(tripletas, objs)
+        case RUTA.numero:
+            return "numero", _literal(objs, xsd_type=XSD.integer)
         case _:
             raise Exception(f"se encontró un predicado desconocido: {pred}")
 
 
-def _literal(objs: set[Node]) -> Any:
+def _literal(objs: set[Node], xsd_type=None) -> Any:
     """
     Retorna el valor del primer elemento de `objs` verificando que en realidad solo hay un elemento
     y que dicho elemento es un Literal
+
+    Si se pasa el argumento `xsd_type` entonces busca entre los elementos de `objs` el que tenga el
+    tipo indicado y lo retorna
     """
-    assert len(objs) == 1, f"len(objs) != 1, objs={objs}"
-    obj = next(iter(objs))
-    assert isinstance(obj, Literal)
-    return obj.value
+    if xsd_type is None:
+        assert len(objs) == 1, f"len(objs) != 1, objs={objs}"
+        obj = next(iter(objs))
+        assert isinstance(obj, Literal)
+        return obj.value
+
+    for obj in objs:
+        assert isinstance(obj, Literal)
+        if obj.datatype == xsd_type:
+            return obj.value
+
+    raise Exception(f"no se encontró un elemento con ese xsd_type: {objs}")
 
 
 def _uri_ref_nombre(tripletas: Tripletas, objs: set[Node]) -> str:
@@ -303,24 +321,31 @@ def _uri_ref_nombre(tripletas: Tripletas, objs: set[Node]) -> str:
     return _literal(nombre)
 
 
+def _bnode_nombre(objs: set[Node]) -> str:
+    """
+    Retorna la representación en string del primer elemento de `objs` verificando que solo hay un
+    elemento y que es un nodo blanco
+    """
+    assert len(objs) == 1
+    obj = next(iter(objs))
+    assert isinstance(obj, BNode)
+    return str(obj)
+
+
 def _uri_ref_nombres(tripletas: Tripletas, objs: set[Node]) -> list[str]:
     """
     Retorna los nombres de los elementos de `objs` verificando que dichos elementos son URIRef o BNode que además tienen un predicado RUTA:nombre si son URIRef
     """
     nombres = []
     for obj in objs:
-        if isinstance(obj, URIRef):
-            nombre = tripletas[obj][URIRef(RUTA.nombre)]
-            nombres.append(_literal(nombre))
-        elif isinstance(obj, BNode):
-            nombre = str(obj)
-            nombres.append(nombre)
+        nombres.append(_nodo_nombre(tripletas, obj))
     return nombres
 
 
 def _collection_nombres(tripletas: Tripletas, objs: set[Node]) -> list[str]:
     """
-    Retorna una lista con los nombres de los elementos de `objs` verificando que `objs` contenga una única collección cuyos elementos tengan valores para el predicado RUTA:nombre
+    Retorna una lista con los nombres de los elementos de `objs` verificando que `objs` contenga
+    una única collección cuyos elementos tengan valores para el predicado RUTA:nombre o sean nodos blancos
     """
     assert len(objs) == 1
     lista = next(iter(objs))
@@ -330,14 +355,30 @@ def _collection_nombres(tripletas: Tripletas, objs: set[Node]) -> list[str]:
     elementos = _recorrer_collection(tripletas, tripletas[lista])
 
     # obtener los RUTA:nombre de los elementos de la colleción
-    elementos = list(map(lambda e: _literal(tripletas[e][RUTA.nombre]), elementos))
+    elementos = list(map(lambda e: _nodo_nombre(tripletas, e), elementos))
 
     return elementos
 
 
-def _recorrer_collection(tripletas: Tripletas, collection: Predicados) -> list[URIRef]:
+def _nodo_nombre(tripletas: Tripletas, obj: Node) -> str:
     """
-    Recorre la collección `collection` retornando una lista de URIRef (los elementos de la collección)
+    Si `obj` (un sujeto del grafo de ontologias) es un URIRef, retorna el valor del predicado
+    RUTA:nombre asociado a dicho sujeto
+
+    Si `obj` es un BNode retorna la representación en string del BNode
+    """
+    if isinstance(obj, URIRef):
+        nombre = tripletas[obj][RUTA.nombre]
+        return _literal(nombre)
+    elif isinstance(obj, BNode):
+        return str(obj)
+
+    raise Exception(f"ni URIRef ni BNode: {obj}")
+
+
+def _recorrer_collection(tripletas: Tripletas, collection: Predicados) -> list[Node]:
+    """
+    Recorre la collección `collection` retornando una lista python equivalente (con elementos tipo URIRef o BNode)
     """
     resultado = []
     cur = collection
@@ -345,7 +386,7 @@ def _recorrer_collection(tripletas: Tripletas, collection: Predicados) -> list[U
         assert len(cur[RDF.first]) == 1, f"len(first) != 1, first: {cur[RDF.first]}"
         first = next(iter(cur[RDF.first]))
 
-        assert isinstance(first, URIRef), f"first is not an URIRef, first: {first}"
+        assert isinstance(first, URIRef) or isinstance(first, BNode), f"first no es URIRef ni BNode, first: {first}"
 
         resultado.append(first)
 

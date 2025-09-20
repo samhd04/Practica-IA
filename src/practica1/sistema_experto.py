@@ -134,20 +134,6 @@ class Motor(KnowledgeEngine):
                 self.__rutas[fact["nombre"]] = fact
         return super().declare(*facts)
 
-    @Rule(Fluidez(fluidez="nula", via=MATCH.via), salience=4)
-    def fluidez_nula(self, via):
-        """
-        Regla que elimina las vias con fluidez nula, y por lo tanto también elimina todas las rutas
-        que transitan esa vía eliminada
-        """
-        print(f"Eliminando via {via} debido a que presenta una fluidez nula")
-        self.retract(self.__vias[via])
-
-        for ruta_nombre, ruta in self.__rutas.items():
-            if via in ruta["vias"]:
-                print(f"\tTambién eliminando ruta {ruta_nombre} que contiene esta via")
-                self.retract(ruta)
-
     @Rule(
         Ruta(nombre=MATCH.ruta_nombre, vias=MATCH.ruta_vias),
         Nodo(
@@ -279,7 +265,7 @@ class Motor(KnowledgeEngine):
 
         self.declare(TiempoRuta(ruta=nombre, tiempo_estimado=tiempo_estimado))
 
-        
+
     @Rule(Fluidez(fluidez="nula", via=MATCH.via), salience=4)
     def fluidez_nula(self, via):
         """
