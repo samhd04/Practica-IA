@@ -250,17 +250,17 @@ def _traducir_atributo(
             # de la intersección
             return None, None
         case RUTA.tiempoEspera:
-            return "tiempo_espera", _literal(objs)
+            return "tiempo_espera", _literal(objs, xsd_type=XSD.double)
         case RUTA.intersectaCon:
             return "intersecta_con", _uri_ref_nombres(tripletas, objs)
         case RUTA.fluidez:
             return "fluidez", _literal(objs)
         case RUTA.velocidadPromedio:
-            return "velocidad_promedio", _literal(objs)
+            return "velocidad_promedio", _literal(objs, xsd_type=XSD.double)
         case RUTA.estaEnVia:
             return "via", _uri_ref_nombre(tripletas, objs)
         case RUTA.esBidireccional:
-            return "es_bidireccional", _literal(objs)
+            return "es_bidireccional", _literal(objs, xsd_type=XSD.boolean)
         case DC.title:
             return "nombre", _literal(objs)
         case RUTA.tieneDistancia:
@@ -272,7 +272,7 @@ def _traducir_atributo(
         case RUTA.cierreTotal:
             return "cierre_total", _literal(objs, xsd_type=XSD.boolean)
         case RUTA.duracion:
-            return "duracion", _literal(objs)
+            return "duracion", _literal(objs, xsd_type=XSD.double)
         case RUTA.tieneNombre:
             return "nombre", _literal(objs)
         case RUTA.origen:
