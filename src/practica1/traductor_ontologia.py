@@ -48,13 +48,13 @@ def traducir(g: Graph) -> Sequence[Fact]:
 
         # si `tipo` es None, no es una instancia y no nos interesa agregarlo a la lista de hechos
         if tipo_clase is None:
-            print(f"Advertencia: ignorando {subj}")  # TODO: eliminar esto
-            print()
-            print(f"\t{datos}")
-            print()
-            print()
-            print()
-            print()
+            # print(f"Advertencia: ignorando {subj}")  # TODO: eliminar esto
+            # print()
+            # print(f"\t{datos}")
+            # print()
+            # print()
+            # print()
+            # print()
             continue
 
         # ya traducimos el tipo entonces lo eliminamos de los datos que quedan por traducir

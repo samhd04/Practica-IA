@@ -59,7 +59,7 @@ class Ruta(Fact):
     Representa una ruta (un conjunto ordenado de vías) que un carro puede seguir
     Atributos:
         - nombre: el nombre de la ruta
-        - vias: lista de nombres de vías
+        - tiene_nodos: lista de nombres de intersecciones
         - distancia: la distancia total que recorre esta ruta
         - tiempo_estimado: ... FIXME
     """
@@ -138,25 +138,26 @@ class Motor(KnowledgeEngine):
         return super().declare(*facts)
 
     @Rule(
-        Ruta(nombre=MATCH.ruta_nombre, vias=MATCH.ruta_vias),
+        Ruta(nombre=MATCH.ruta_nombre, origen=MATCH.ruta_origen),
         Nodo(
             tipo="Punto_de_referencia",
             nombre=MATCH.punto_nombre,
-            vias_conectadas=MATCH.punto_vias_conectadas,
+            se_relaciona_con=MATCH.punto_se_relaciona_con,
         ),
         Objetivo(desde=MATCH.punto_nombre),
-        salience=3,
+        salience=5,
     )
     def ruta_que_no_inicia_en_objetivo(
-        self, ruta_nombre, ruta_vias, punto_vias_contectadas
+        self, ruta_nombre, ruta_origen, punto_se_relaciona_con
     ):
         """
         Regla que elimina todas las rutas que inician en una vía que no contiene el punto de
         partida deseado
         """
+        print(f"Verificando si la ruta {ruta_nombre} sirve (inicia en el punto de partida deseado)")
         ruta_sirve = False
-        for via in punto_vias_contectadas:
-            if via == ruta_vias[0]:
+        for nodo in punto_se_relaciona_con:
+            if nodo == ruta_origen:
                 ruta_sirve = True
                 break
 
@@ -167,25 +168,26 @@ class Motor(KnowledgeEngine):
             self.retract(self.__rutas[ruta_nombre])
 
     @Rule(
-        Ruta(nombre=MATCH.ruta_nombre, vias=MATCH.ruta_vias),
+        Ruta(nombre=MATCH.ruta_nombre, tiene_nodos=MATCH.ruta_nodos),
         Nodo(
             tipo="Punto_de_referencia",
             nombre=MATCH.punto_nombre,
-            vias_conectadas=MATCH.punto_vias_conectadas,
+            se_relaciona_con=MATCH.punto_se_relaciona_con,
         ),
         Objetivo(hasta=MATCH.punto_nombre),
         salience=3,
     )
     def ruta_que_no_termina_en_objetivo(
-        self, ruta_nombre, ruta_vias, punto_vias_contectadas
+        self, ruta_nombre, ruta_nodos, punto_se_relaciona_con
     ):
         """
         Regla que elimina todas las rutas que terminan en una vía que no contiene el punto de
         llegada deseado
         """
+        print(f"Verificando si la ruta {ruta_nombre} sirve (termina en el punto de llegada deseado)")
         ruta_sirve = False
-        for via in punto_vias_contectadas:
-            if via == ruta_vias[-1]:
+        for nodo in punto_se_relaciona_con:
+            if nodo == ruta_nodos[-1]:
                 ruta_sirve = True
                 break
 
