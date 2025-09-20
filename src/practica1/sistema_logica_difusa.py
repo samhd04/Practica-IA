@@ -18,7 +18,6 @@ congestion['media'] = fuzz.trapmf(congestion.universe, [30, 45, 55, 70])
 congestion['alta'] = fuzz.gaussmf(congestion.universe, 80, 8)
 
 # Aplicar un modificador para Congestion: "muy" (intensificación)
-# Esto se logra elevando la función de pertenencia a una potencia > 1
 congestion['muy_alta'] = fuzz.gaussmf(congestion.universe, 80, 8) ** 2
 
 # VelocidadMedia (universo: 0-60)
@@ -27,7 +26,6 @@ velocidad_media['normal'] = fuzz.trimf(velocidad_media.universe, [15, 30, 45])
 velocidad_media['rapida'] = fuzz.trapmf(velocidad_media.universe, [40, 45, 60, 60])
 
 # Aplicar un modificador para VelocidadMedia: "más o menos" (dilatación)
-# Esto se logra elevando la función de pertenencia a una potencia < 1
 velocidad_media['mas_o_menos_normal'] = fuzz.trimf(velocidad_media.universe, [15, 30, 45]) ** 0.5
 
 # EsperaSemaforo (universo: 0-180)
@@ -35,7 +33,7 @@ espera_semaforo['corta'] = fuzz.trapmf(espera_semaforo.universe, [0, 0, 11, 22])
 espera_semaforo['media'] = fuzz.trimf(espera_semaforo.universe, [17, 33, 50])
 espera_semaforo['larga'] = fuzz.gaussmf(espera_semaforo.universe, 67, 8)
 
-
+# Fluidez (universo: 0-100)
 fluidez['nula'] = fuzz.trimf(fluidez.universe, [0, 0, 10])
 fluidez['muy_mala'] = fuzz.trimf(fluidez.universe, [5, 15, 25])
 fluidez['mala'] = fuzz.trimf(fluidez.universe, [20, 35, 50])
@@ -43,7 +41,7 @@ fluidez['aceptable'] = fuzz.trimf(fluidez.universe, [45, 55, 65])
 fluidez['buena'] = fuzz.trimf(fluidez.universe, [60, 75, 85])
 fluidez['muy_buena'] = fuzz.trimf(fluidez.universe, [80, 100, 100])
 
-# 3. Definir las reglas difusas (mínimo 9 reglas)
+# 3. Definir las reglas difusas
 rule1 = ctrl.Rule(congestion['alta'] & velocidad_media['lenta'], fluidez['mala'])
 rule2 = ctrl.Rule(congestion['muy_alta'], fluidez['muy_mala'])
 rule3 = ctrl.Rule(congestion['baja'] & velocidad_media['rapida'], fluidez['buena'])
@@ -58,11 +56,7 @@ rule9 = ctrl.Rule(velocidad_media['rapida'] & espera_semaforo['corta'], fluidez[
 sistema_control = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9])
 simulacion_fluidez = ctrl.ControlSystemSimulation(sistema_control)
 
-# 5. Proceso de defuzzificación (ejemplo justificado)
-# Scikit-fuzzy utiliza el método del "centroide" por defecto, que calcula el centro de masa del área.
-# Es un método robusto y comúnmente utilizado que representa bien el resultado global.
-print("El método de defuzzificación por defecto en scikit-fuzzy es el centroide.")
-print("Este método es preferido por su precisión al calcular el 'centro de masa' de la salida.")
+# 5. Proceso de defuzzificación
 
 def calcular_fluidez_via(congestion_val, velocidad_val, espera_val):
     simulacion_fluidez.input['congestion'] = congestion_val
@@ -87,21 +81,3 @@ def calcular_fluidez_via(congestion_val, velocidad_val, espera_val):
         etiqueta = "muy buena"
 
     return etiqueta
-
-""" # 6. Realizar una simulación con valores de ejemplo
-simulacion_fluidez.input['congestion'] = 10
-simulacion_fluidez.input['velocidad_media'] = 80
-simulacion_fluidez.input['espera_semaforo'] = 0
-
-simulacion_fluidez.compute()
-
-
-
-# Mostrar los resultados
-print("\n--- Resultados de la simulación ---")
-print(f"Congestión de entrada: 75")
-print(f"Velocidad Media de entrada: 25")
-print(f"Espera en el semáforo de entrada: 100")
-print(f"Nivel de fluidez (salida): {simulacion_fluidez.output['fluidez']:.2f}%")
-fluidez = simulacion_fluidez.output['fluidez']
-"""
