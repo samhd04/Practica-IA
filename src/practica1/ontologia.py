@@ -93,13 +93,18 @@ g.add((RUTA.tieneNodos,RDF.type,RDF.Property))
 g.add((RUTA.tieneNodos,RDFS.domain,RUTA.Ruta))
 g.add((RUTA.tieneNodos,RDFS.range,RUTA.Interseccion))
 
-g.add((RUTA.origen, RDF.type, RDF.Property))
-g.add((RUTA.origen, RDFS.domain, RUTA.Ruta))
-g.add((RUTA.origen, RDFS.range, RUTA.Interseccion))
+g.add((RUTA.origen,RDF.type,RDF.Property))
+g.add((RUTA.origen,RDFS.domain,RUTA.Ruta))
+g.add((RUTA.origen,RDFS.range,RUTA.Interseccion))
 
-g.add((RUTA.destino, RDF.type, RDF.Property))
-g.add((RUTA.destino, RDFS.domain, RUTA.Ruta))
-g.add((RUTA.destino, RDFS.range, RUTA.Interseccion))
+g.add((RUTA.destino,RDF.type,RDF.Property))
+g.add((RUTA.destino,RDFS.domain,RUTA.Ruta))
+g.add((RUTA.destino,RDFS.range,RUTA.Interseccion))
+
+g.add((RUTA.numeracion,RDF.type, RDF.Property))
+g.add((RUTA.numeracion,RDFS.subClassOf,DC.title))
+g.add((RUTA.numeracion,RDFS.domain,RUTA.Ruta))
+g.add((RUTA.numeracion,RDFS.range,XSD.string))
 
 #Evento:
 g.add((RUTA.tipo,RDF.type,RDF.Property))
@@ -403,7 +408,7 @@ for i in range(1, 52):
     nodo = BNode()
     intersecciones[f"Interseccion{i}"] = nodo
     g.add((nodo, RDF.type, RUTA.Interseccion))
-    g.add((nodo, RUTA.numero, Literal(i, datatype=XSD.integer)))
+    g.add((nodo, RUTA.numero, Literal(str(i), datatype=XSD.string)))
 
 def intersecta(nodo1, nodo2, via):
     g.add((nodo1, RUTA.intersectaCon, nodo2))
@@ -634,13 +639,13 @@ for inter, _, via in g.triples((None, RUTA.conectaCon, None)):
 mapa_numeros = {}
 for s, _, num in g.triples((None, RUTA.numero, None)):
     try:
-        mapa_numeros[s] = int(str(num))
+        mapa_numeros[s] = int(num)
     except ValueError:
         continue
 
 def rutas_sin_repetir_vias(G, inicio, fin, cutoff=10):
     rutas = []
-    def dfs(actual, destino, camino, vias_usadas, depth):
+    def dfs(actual, destino, camino, vias_usadas, nodos_usados, depth):
         if depth > cutoff:
             return
         if actual == destino:
@@ -650,16 +655,18 @@ def rutas_sin_repetir_vias(G, inicio, fin, cutoff=10):
             via = G[actual][vecino]["via"]
             if via in vias_usadas:
                 continue
+            if vecino in nodos_usados:
+                continue
             camino.append((vecino, via))
-            dfs(vecino, destino, camino, vias_usadas | {via}, depth + 1)
+            dfs(vecino, destino, camino, vias_usadas | {via}, nodos_usados | {vecino}, depth + 1)
             camino.pop()
-    dfs(inicio, fin, [(inicio, None)], set(), 0)
+    dfs(inicio, fin, [(inicio, None)], set(), {inicio}, 0)
     return rutas
 
 def agregar_ruta_al_grafo(ruta, id, origen, destino):
     ruta_node = BNode()
     g.add((ruta_node, RDF.type, RUTA.Ruta))
-    g.add((ruta_node, DC.title, Literal(f"Ruta{id}")))
+    g.add((ruta_node, RUTA.numeracion, Literal(f"Ruta{id}")))
     
     # Origen y destino explícitos
     g.add((ruta_node, RUTA.origen, origen))
@@ -694,7 +701,7 @@ print("Total de tripletas con todas las rutas:", len(g))
 
 
 inicio = intersecciones["Interseccion30"]
-fin = intersecciones["Interseccion20"]
+fin = intersecciones["Interseccion5"]
 
 rutas = rutas_sin_repetir_vias(G, inicio, fin, cutoff=6)
 
