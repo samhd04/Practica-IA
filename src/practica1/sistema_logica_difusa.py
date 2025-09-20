@@ -86,9 +86,8 @@ def calcular_fluidez_via(congestion_val, velocidad_val, espera_val):
     else:
         etiqueta = "muy buena"
 
-    return Literal(f"{etiqueta}")
+    return etiqueta
 
-calcular_fluidez_via(75, 25, 100)
 """ # 6. Realizar una simulación con valores de ejemplo
 simulacion_fluidez.input['congestion'] = 10
 simulacion_fluidez.input['velocidad_media'] = 80
