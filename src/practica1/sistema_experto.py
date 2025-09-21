@@ -44,7 +44,7 @@ class Nodo(Fact):
 class Semaforo(Fact):
     """
     Atributos:
-        - tiempo_espera: valor de tipo entero, tiempo en minutos que el semaforo está en rojo
+        - tiempo_espera: valor de tipo entero, tiempo en segundos que el semaforo está en rojo
         - via: el nombre de la vía en la que el semanforo se encuentra
     """
 
@@ -296,8 +296,9 @@ class Motor(KnowledgeEngine):
         """
         Agrega el tiempo que se demoran los semáforos al tiempo estimado de atravesar la vía
         """
-        # El nuevo tiempo será el tiempo anterior sumado al tiempo del semaforo convertido de minutos a horas
-        nuevo_tiempo = tiempo + (tiempo_semaforo / 60)
+        # El nuevo tiempo será el tiempo anterior sumado al tiempo del semaforo convertido de
+        # segundos a horas
+        nuevo_tiempo = tiempo + (tiempo_semaforo / 60 / 60)
         print(
             f"Cálculo (incluyendo semaforos) de tiempo estimado para via {via_nombre}: {nuevo_tiempo} horas"
         )

@@ -78,7 +78,7 @@ g.add((RUTA.numero,RDFS.domain,RUTA.Interseccion))
 g.add((RUTA.numero,RDFS.range,XSD.string))
 
 #Semáforo
-g.add((RUTA.tiempoEspera,RDF.type,RDF.Property))
+g.add((RUTA.tiempoEspera,RDF.type,RDF.Property)) # segundos
 g.add((RUTA.tiempoEspera,RDFS.domain,RUTA.Semaforo))
 g.add((RUTA.tiempoEspera,RDFS.range,XSD.double))
 
