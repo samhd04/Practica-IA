@@ -168,20 +168,15 @@ class Motor(KnowledgeEngine):
     @Rule(
         Evento(cierre_total=True, tipo=MATCH.evento_tipo),
         Via(nombre=MATCH.via_nombre, afectada_por=MATCH.via_afectada_por),
-        salience=6,
+        salience=30,
     )
     def evento_cierre_total(self, via_nombre, evento_tipo, via_afectada_por):
         """
         Esta regla elimina las vias que están afectadas por un evento de cierre total
         También elimina todas las rutas que contienen esas vias eliminadas
         """
-        evento_afecta_via = False
-        for evento in via_afectada_por:
-            if evento == evento_tipo:
-                evento_afecta_via = True
-                break
-
-        if not evento_afecta_via:
+        # Si este evento no afecta la via, no continuar la ejecución de esta regla
+        if evento_tipo not in via_afectada_por:
             return
 
         print(
@@ -210,7 +205,7 @@ class Motor(KnowledgeEngine):
             se_relaciona_con=MATCH.punto_se_relaciona_con,
         ),
         Objetivo(desde=MATCH.punto_nombre),
-        salience=5,
+        salience=20,
     )
     def ruta_que_no_inicia_en_objetivo(
         self, ruta_numeracion, ruta_origen, punto_se_relaciona_con
@@ -219,13 +214,8 @@ class Motor(KnowledgeEngine):
         Regla que elimina todas las rutas que inician en una intersección que no se relaciona con
         el punto de partida deseado
         """
-        ruta_sirve = False
-        for nodo in punto_se_relaciona_con:
-            if nodo == ruta_origen:
-                ruta_sirve = True
-                break
-
-        if ruta_sirve:
+        # si la ruta inicia en el punto de referencia deseado
+        if ruta_origen in punto_se_relaciona_con:
             print(
                 f"La ruta {ruta_numeracion} sirve (inicia en el punto de origen deseado)"
             )
@@ -237,14 +227,14 @@ class Motor(KnowledgeEngine):
             del self.__rutas[ruta_numeracion]
 
     @Rule(
-        Ruta(nombre=MATCH.ruta_numeracion, destino=MATCH.ruta_destino),
+        Ruta(numeracion=MATCH.ruta_numeracion, destino=MATCH.ruta_destino),
         Nodo(
             tipo="Punto_de_referencia",
             nombre=MATCH.punto_nombre,
             se_relaciona_con=MATCH.punto_se_relaciona_con,
         ),
         Objetivo(hasta=MATCH.punto_nombre),
-        salience=5,
+        salience=20,
     )
     def ruta_que_no_termina_en_objetivo(
         self, ruta_numeracion, ruta_destino, punto_se_relaciona_con
@@ -253,13 +243,8 @@ class Motor(KnowledgeEngine):
         Regla que elimina todas las rutas que terminan en una intersección que no se relaciona con
         el punto de llegada deseado
         """
-        ruta_sirve = False
-        for nodo in punto_se_relaciona_con:
-            if nodo == ruta_destino:
-                ruta_sirve = True
-                break
-
-        if ruta_sirve:
+        # si la ruta termina en el punto de referencia deseado
+        if ruta_destino in punto_se_relaciona_con:
             print(
                 f"La ruta {ruta_numeracion} sirve (termina en el punto de llegada deseado)"
             )
