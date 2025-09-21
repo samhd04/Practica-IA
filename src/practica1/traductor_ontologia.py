@@ -41,34 +41,25 @@ def traducir(g: Graph) -> Sequence[Fact]:
 
     # En este ciclo for se realiza la traducción
     for subj, datos in tripletas.items():
-        # print()
-        # print(f"Traduciendo sujeto {subj} con datos {datos}")
         # traducción del tipo RDF.type a una clase de hecho:
-        tipo_clase, tipo_atributo = _traducir_tipo(datos[RDF.type])
+        tipo_clase, tipo_campo = _traducir_tipo(datos[RDF.type])
 
         # si `tipo` es None, no es una instancia y no nos interesa agregarlo a la lista de hechos
         if tipo_clase is None:
-            # print(f"Advertencia: ignorando {subj}")  # TODO: eliminar esto
-            # print()
-            # print(f"\t{datos}")
-            # print()
-            # print()
-            # print()
-            # print()
             continue
 
         # ya traducimos el tipo entonces lo eliminamos de los datos que quedan por traducir
         del datos[RDF.type]
 
-        # traducimos los atributos que quedan por traducir
-        atributos = _traducir_atributos(tripletas, datos)
+        # traducimos los campos que quedan por traducir
+        campos = _traducir_campos(tripletas, datos)
 
-        hecho_traducido = tipo_clase(**atributos)
+        hecho_traducido = tipo_clase(**campos)
 
-        if tipo_atributo is not None:
-            hecho_traducido["tipo"] = tipo_atributo
+        if tipo_campo is not None:
+            hecho_traducido["tipo"] = tipo_campo
 
-        # agregamos el hecho a la lista de hechos junto con sus atributos
+        # agregamos el hecho a la lista de hechos junto con sus campos
         hechos.append(hecho_traducido)
 
     return hechos
@@ -77,7 +68,7 @@ def traducir(g: Graph) -> Sequence[Fact]:
 def _traducir_tipo(tipos: set[Node]) -> tuple[type[Fact] | None, str | None]:
     """
     Recibe un `set` de tipos (objetos del predicado RDF.type) y retorna la clase de hecho
-    correspondiente, junto a un string tipo (valor del atributo tipo de esa clase de hecho), si
+    correspondiente, junto a un string tipo (valor del campo tipo de esa clase de hecho), si
     es necesario (o None si no lo es).
 
     Retorna (None, None) si el tipo no se refiere a una instancia:
@@ -182,32 +173,30 @@ def _eliminar_tipos_ignorados(tipos: set[Node]):
                     break
 
 
-def _traducir_atributos(
+def _traducir_campos(
     tripletas: Tripletas, datos: dict[Node, set[Node]]
 ) -> dict[str, Any]:
     """
-    Recibe un diccionario de predicados con sus valores y retorna un diccionario de atributos con
+    Recibe un diccionario de predicados con sus valores y retorna un diccionario de campos con
     sus respectivos valores para ser usados en una clase de hecho del sistema experto
     """
 
-    atributos = {}
+    campos = {}
 
     for pred, objs in datos.items():
         # print(f"\tTraduciendo predicado {pred}")
-        # se traduce el predicado a un nombre de atributo
-        llave, valor = _traducir_atributo(tripletas, pred, objs)
-        if llave is None:
-            continue
-        atributos[llave] = valor
+        # se traduce el predicado a un nombre de campo
+        llave, valor = _traducir_campo(tripletas, pred, objs)
+        campos[llave] = valor
 
-    return atributos
+    return campos
 
 
-def _traducir_atributo(
+def _traducir_campo(
     tripletas: Tripletas, pred: Node, objs: set[Node]
-) -> tuple[str | None, Any | None]:
+) -> tuple[str, Any]:
     """
-    Traduce un predicado con sus objetos de un grafo de ontologías a una tupla (atributo, valor)
+    Traduce un predicado con sus objetos de un grafo de ontologías a una tupla (campo, valor)
     para ser usado en la creación de un hecho del sistema experto
 
     Parámetros:
@@ -215,9 +204,8 @@ def _traducir_atributo(
         - objs: una lista de objetos asociados a dicho predicado
     Retorna:
         Una tupla con los siguientes valores:
-        - el nombre del atributo
+        - el nombre del campo
         - el valor del atributo
-        Puede retornar (None, None) si se debería ignorar este atributo
     """
 
     match pred:
@@ -309,7 +297,7 @@ def _uri_ref_id(tripletas: Tripletas, objs: set[Node], id="nombre") -> str:
     assert len(objs) == 1
     obj = next(iter(objs))
     assert isinstance(obj, URIRef)
-    nombre = tripletas[obj][URIRef(RUTA.nombre)]
+    nombre = tripletas[obj][RUTA[id]]
     return _literal(nombre)
 
 
