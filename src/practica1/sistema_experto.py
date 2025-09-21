@@ -112,6 +112,8 @@ class TiempoVia(Fact):
         - tiempo_estimado: tiempo en minutos que toma atravesar la via
         - incluye_tiempos_semaforo: True si los incluye
         - incluye_tiempos_eventos: True si los incluye
+        - incluye_tiempos_fluidez: True si los incluye
+        - incluye_bonificacion_bidireccional: True si la incluye
     """
 
 
@@ -343,10 +345,6 @@ class Motor(KnowledgeEngine):
         )
         self.__tiempos_via[via_nombre] = tiempo_via
 
-    @Rule()
-    def agregar_tiempo_por_fluidez(self):
-        pass
-
     @Rule(
         Ruta(numeracion=MATCH.numeracion, vias=MATCH.vias),
         NOT(TiempoRuta(ruta=MATCH.numeracion)),
@@ -425,13 +423,54 @@ class Motor(KnowledgeEngine):
                 self.retract(ruta)
                 del self.__rutas[ruta_numeracion]
 
-    @Rule()
-    def regla13(self):
-        pass
+    @Rule(
+        Fluidez(via=MATCH.via_nombre, fluidez=MATCH.fluidez_val),
+        TiempoVia(via=MATCH.via_nombre, tiempo_estimado=MATCH.tiempo),
+        NOT(TiempoVia(via=MATCH.via_nombre, incluye_tiempos_fluidez=True)),
+        salience=2
+    )
+    def ajustar_tiempo_por_fluidez(self, via_nombre, fluidez_val, tiempo):
+        """
+        Ajusta el tiempo de las vías según la fluidez:
+        - muy mala  → +80%
+        - mala      → +40%
+        - aceptable → +10%
+        - buena     → -10%
+        - muy buena → -20%
+        """
+        factor = {
+            "muy mala": 1.8,
+            "mala": 1.4,
+            "aceptable": 1.1,
+            "buena": 0.9,
+            "muy buena": 0.8,
+        }.get(fluidez_val, 1.0)  # por defecto no cambia
 
-    @Rule()
-    def regla14(self):
-        pass
+        if factor != 1.0:
+            nuevo_tiempo = tiempo * factor
+            print(
+                f"Ajustando tiempo de via {via_nombre} por fluidez {fluidez_val}: "
+                f"{tiempo} → {nuevo_tiempo}"
+            )
+            tiempo_via = self.__tiempos_via[via_nombre]
+            tiempo_via = self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_fluidez=True)
+            self.__tiempos_via[via_nombre] = tiempo_via
+
+    @Rule(
+        Via(nombre=MATCH.via_nombre, es_bidireccional=True),
+        TiempoVia(via=MATCH.via_nombre, tiempo_estimado=MATCH.tiempo),
+        NOT(TiempoVia(via=MATCH.via_nombre, incluye_bonificacion_bidireccional=True)),
+        salience=3
+    )
+    def bonificar_vias_bidireccionales(self, via_nombre, tiempo):
+        """
+        Reduce en un 10% el tiempo estimado de vías bidireccionales
+        """
+        nuevo_tiempo = tiempo * 0.9
+        print(f"Reduciendo tiempo de via {via_nombre} por ser bidireccional: {nuevo_tiempo}")
+        tiempo_via = self.__tiempos_via[via_nombre]
+        tiempo_via = self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_bonificacion_bidireccional=True)
+        self.__tiempos_via[via_nombre] = tiempo_via
 
     @Rule()
     def regla15(self):
