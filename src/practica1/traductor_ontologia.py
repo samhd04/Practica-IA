@@ -233,7 +233,7 @@ def _traducir_atributo(
             # FIXME: confirmar esta traducción
             return "se_relaciona_con", _uri_ref_ids(tripletas, objs, id="numero")
         case RUTA.conectaCon:
-            return "vias_conectadas", _uri_ref_ids(tripletas, objs)
+            return "conecta_con", _uri_ref_ids(tripletas, objs)
         case RUTA.tieneSemaforo:
             # FIXME confirmar
             # se ignora porque ya se agrega esta información con la propiedad estaEnVia
@@ -287,6 +287,8 @@ def _traducir_atributo(
             return "numeracion", _literal(objs)
         case RUTA.afectadaPor:
             return "afectada_por", _uri_ref_ids(tripletas, objs, id="tipo")
+        case RUTA.longitud:
+            return "longitud", _literal(objs, xsd_type=XSD.double)
         case _:
             raise Exception(f"se encontró un predicado desconocido: {pred}")
 
