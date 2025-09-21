@@ -203,7 +203,7 @@ class Motor(KnowledgeEngine):
             se_relaciona_con=MATCH.punto_se_relaciona_con,
         ),
         Objetivo(desde=MATCH.punto_nombre),
-        salience=20,
+        salience=25,
     )
     def ruta_que_no_inicia_en_objetivo(
         self, ruta_numeracion, ruta_origen, punto_se_relaciona_con
@@ -232,7 +232,7 @@ class Motor(KnowledgeEngine):
             se_relaciona_con=MATCH.punto_se_relaciona_con,
         ),
         Objetivo(hasta=MATCH.punto_nombre),
-        salience=20,
+        salience=25,
     )
     def ruta_que_no_termina_en_objetivo(
         self, ruta_numeracion, ruta_destino, punto_se_relaciona_con
@@ -253,7 +253,11 @@ class Motor(KnowledgeEngine):
             self.retract(self.__rutas[ruta_numeracion])
             del self.__rutas[ruta_numeracion]
 
-    @Rule(Ruta(numeracion=MATCH.numeracion, vias=MATCH.vias), NOT(DistanciaRuta(ruta=MATCH.numeracion)))
+    @Rule(
+        Ruta(numeracion=MATCH.numeracion, vias=MATCH.vias),
+        NOT(DistanciaRuta(ruta=MATCH.numeracion)),
+        salience=2,
+    )
     def calcular_distancia_rutas(self, numeracion, vias):
         distancia = 0
         for nombre_via in vias:
@@ -271,7 +275,7 @@ class Motor(KnowledgeEngine):
             longitud=MATCH.longitud,
         ),
         NOT(TiempoVia(via=MATCH.nombre)),
-        salience=4,
+        salience=10,
     )
     def calcular_tiempo_via(self, nombre, velocidad_promedio, longitud):
         """
@@ -286,7 +290,7 @@ class Motor(KnowledgeEngine):
         TiempoVia(via=MATCH.via_nombre, tiempo_estimado=MATCH.tiempo),
         Semaforo(via=MATCH.via_nombre, tiempo_espera=MATCH.tiempo_semaforo),
         NOT(TiempoVia(via=MATCH.via_nombre, incluye_tiempos_semaforo=True)),
-        salience=3,
+        salience=5,
     )
     def agregar_tiempos_semaforos(self, via_nombre, tiempo, tiempo_semaforo):
         """
@@ -309,7 +313,7 @@ class Motor(KnowledgeEngine):
         Via(nombre=MATCH.via_nombre, afectada_por=MATCH.via_afectada_por),
         Evento(tipo=MATCH.evento_tipo, duracion=MATCH.evento_duracion),
         NOT(TiempoVia(via=MATCH.via_nombre, incluye_tiempos_eventos=True)),
-        salience=3,
+        salience=5,
     )
     def agregar_tiempos_eventos(
         self, via_nombre, via_afectada_por, tiempo, evento_tipo, evento_duracion
@@ -342,6 +346,7 @@ class Motor(KnowledgeEngine):
     @Rule(
         Ruta(numeracion=MATCH.numeracion, vias=MATCH.vias),
         NOT(TiempoRuta(ruta=MATCH.numeracion)),
+        salience=2,
     )
     def calcular_tiempo_ruta(self, numeracion, vias):
         """
@@ -362,7 +367,7 @@ class Motor(KnowledgeEngine):
     @Rule(
         Via(nombre=MATCH.via_nombre, velocidad_promedio=MATCH.velocidad),
         Semaforo(via=MATCH.via_nombre),
-        salience=7
+        salience=20,
     )
     def calcular_fluidez_con_semaforo(self, via_nombre, velocidad):
         """
@@ -382,7 +387,7 @@ class Motor(KnowledgeEngine):
     @Rule(
         Via(nombre=MATCH.via_nombre, velocidad_promedio=MATCH.velocidad),
         NOT(Semaforo(via=MATCH.via_nombre)),
-        salience=7
+        salience=20,
     )
     def calcular_fluidez_sin_semaforo(self, via_nombre, velocidad):
         """
@@ -399,7 +404,7 @@ class Motor(KnowledgeEngine):
         )
         self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
 
-    @Rule(Fluidez(fluidez="nula", via=MATCH.via), salience=6)
+    @Rule(Fluidez(fluidez="nula", via=MATCH.via), salience=15)
     def fluidez_nula(self, via):
         """
         Regla que elimina las vias con fluidez nula, y por lo tanto también elimina todas las rutas
@@ -421,7 +426,7 @@ class Motor(KnowledgeEngine):
         Fluidez(via=MATCH.via_nombre, fluidez=MATCH.fluidez_val),
         TiempoVia(via=MATCH.via_nombre, tiempo_estimado=MATCH.tiempo),
         NOT(TiempoVia(via=MATCH.via_nombre, incluye_tiempos_fluidez=True)),
-        salience=2
+        salience=5,
     )
     def ajustar_tiempo_por_fluidez(self, via_nombre, fluidez_val, tiempo):
         """
@@ -447,29 +452,37 @@ class Motor(KnowledgeEngine):
                 f"{tiempo} → {nuevo_tiempo}"
             )
             tiempo_via = self.__tiempos_via[via_nombre]
-            tiempo_via = self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_fluidez=True)
+            tiempo_via = self.modify(
+                tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_fluidez=True
+            )
             self.__tiempos_via[via_nombre] = tiempo_via
 
     @Rule(
         Via(nombre=MATCH.via_nombre, es_bidireccional=True),
         TiempoVia(via=MATCH.via_nombre, tiempo_estimado=MATCH.tiempo),
         NOT(TiempoVia(via=MATCH.via_nombre, incluye_bonificacion_bidireccional=True)),
-        salience=3
+        salience=5,
     )
     def bonificar_vias_bidireccionales(self, via_nombre, tiempo):
         """
         Reduce en un 10% el tiempo estimado de vías bidireccionales
         """
         nuevo_tiempo = tiempo * 0.9
-        print(f"Reduciendo tiempo de via {via_nombre} por ser bidireccional: {nuevo_tiempo}")
+        print(
+            f"Reduciendo tiempo de via {via_nombre} por ser bidireccional: {nuevo_tiempo}"
+        )
         tiempo_via = self.__tiempos_via[via_nombre]
-        tiempo_via = self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_bonificacion_bidireccional=True)
+        tiempo_via = self.modify(
+            tiempo_via,
+            tiempo_estimado=nuevo_tiempo,
+            incluye_bonificacion_bidireccional=True,
+        )
         self.__tiempos_via[via_nombre] = tiempo_via
 
     @Rule(
         Ruta(numeracion=MATCH.numeracion),
         DistanciaRuta(ruta=MATCH.numeracion, distancia=MATCH.distancia),
-        salience=3
+        salience=1,
     )
     def eliminar_rutas_muy_largas(self, numeracion, distancia):
         """
