@@ -23,7 +23,7 @@ def main() -> None:
     # declaramos los hechos en el motor
     motor.declare(*hechos)
 
-    motor.declare(Objetivo(desde="Universidad Nacional de Colombia", hasta="Parque Carlos E. Restrepo")) # FIXME: quitar esto (es temporal)
+    motor.declare(Objetivo(desde="Universidad Nacional de Colombia", hasta="Estadio de Fútbol Atanasio Girardot")) # FIXME: quitar esto (es temporal)
 
     motor.run()
 
