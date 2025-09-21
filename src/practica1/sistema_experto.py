@@ -288,23 +288,19 @@ class Motor(KnowledgeEngine):
         self.__tiempos_via[via_nombre] = tiempo_via
 
     @Rule(
-        Ruta(numeracion=MATCH.numeracion, tiene_nodos=MATCH.nodos), NOT(TiempoRuta(ruta=MATCH.numeracion))
+        Ruta(numeracion=MATCH.numeracion, tiene_vias=MATCH.vias), NOT(TiempoRuta(ruta=MATCH.numeracion))
     )
-    def calcular_tiempo_ruta(self, numeracion, nodos):
+    def calcular_tiempo_ruta(self, numeracion, vias):
         """
         Regla que calcula el tiempo estimado de cada ruta
         """
-        print(f"Calculando tiempo de la ruta {numeracion}")
         tiempo_estimado = 0
 
-        for nodo_nombre in nodos:
-            nodo = self.__intersecciones[nodo_nombre]
-            # for via in nodo["conecta_con"]:
-            #     print(via)
-            # breakpoint()
-            # tiempo_via = self.__tiempos_via[via_nombre]
-            # tiempo_estimado += tiempo_via["tiempo_estimado"]
+        for via_nombre in vias:
+            tiempo_via = self.__tiempos_via[via_nombre]
+            tiempo_estimado += tiempo_via["tiempo_estimado"]
 
+        print(f"Tiempo de la ruta {numeracion} calculado: {tiempo_estimado}")
         self.declare(TiempoRuta(ruta=numeracion, tiempo_estimado=tiempo_estimado))
 
 
