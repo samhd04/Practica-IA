@@ -189,7 +189,7 @@ class Motor(KnowledgeEngine):
             del self.__rutas[ruta_numeracion]
 
     @Rule(
-        Ruta(nombre=MATCH.ruta_numeracion, tiene_nodos=MATCH.ruta_nodos),
+        Ruta(nombre=MATCH.ruta_numeracion, destino=MATCH.ruta_destino),
         Nodo(
             tipo="Punto_de_referencia",
             nombre=MATCH.punto_nombre,
@@ -199,7 +199,7 @@ class Motor(KnowledgeEngine):
         salience=5,
     )
     def ruta_que_no_termina_en_objetivo(
-        self, ruta_numeracion, ruta_nodos, punto_se_relaciona_con
+        self, ruta_numeracion, ruta_destino, punto_se_relaciona_con
     ):
         """
         Regla que elimina todas las rutas que terminan en una intersección que no se relaciona con
@@ -207,7 +207,7 @@ class Motor(KnowledgeEngine):
         """
         ruta_sirve = False
         for nodo in punto_se_relaciona_con:
-            if nodo == ruta_nodos[-1]:
+            if nodo == ruta_destino:
                 ruta_sirve = True
                 break
 
