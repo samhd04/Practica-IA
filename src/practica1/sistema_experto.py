@@ -103,8 +103,8 @@ class TiempoVia(Fact):
     Atributos:
         - via: el nombre de la via
         - tiempo_estimado: tiempo en minutos que toma atravesar la via
-        - incluye_tiempos_semaforo: True si lo incluye, no debería estar presente si no lo incluye
-        - incluye_tiempos_eventos: True si lo incluye, no deberia estar presente si no lo incluye
+        - incluye_tiempos_semaforo: True si los incluye
+        - incluye_tiempos_eventos: True si los incluye
     """
 
 
@@ -243,7 +243,7 @@ class Motor(KnowledgeEngine):
     @Rule(
         TiempoVia(via=MATCH.via_nombre, tiempo_estimado=MATCH.tiempo),
         Semaforo(via=MATCH.via_nombre, tiempo_espera=MATCH.tiempo_semaforo),
-        NOT(TiempoVia(via=MATCH.via_nombre, incluye_tiempos_semaforo=MATCH.incluye_tiempos_semaforo)),
+        NOT(TiempoVia(via=MATCH.via_nombre, incluye_tiempos_semaforo=True)),
         salience=3
     )
     def agregar_tiempos_semaforos(self, via_nombre, tiempo, tiempo_semaforo):
@@ -255,24 +255,37 @@ class Motor(KnowledgeEngine):
             f"Cálculo (incluyendo semaforos) de tiempo estimado para via {via_nombre}: {nuevo_tiempo}"
         )
         tiempo_via = self.__tiempos_via[via_nombre]
-        self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_semaforo=True)
+        tiempo_via = self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_semaforo=True)
+        self.__tiempos_via[via_nombre] = tiempo_via
 
-    # @Rule(
-    #     TiempoVia(via=MATCH.via_nombre, tiempo_estimado=MATCH.tiempo),
-    #     Evento(afecta_via=MATCH.via_nombre, tipo=MATCH.evento_tipo),
-    # )
-    # def agregar_tiempos_eventos(self, via_nombre, tiempo, evento_tipo):
-    #     """
-    #     Agrega el tiempo que se demoran los semáforos al tiempo estimado de atravesar la vía
-    #     """
-    #     # FIXME: definir estos valores
-    #     tiempo_adicional = {"choque": 20, "obra": 10, "manifestación": 999}[evento_tipo]
-    #     nuevo_tiempo = tiempo + tiempo_adicional
-    #     print(
-    #         f"Cálculo (incluyendo {evento_tipo}) de tiempo estimado para via {via_nombre}: {nuevo_tiempo}"
-    #     )
-    #     tiempo_via = self.__tiempos_via[via_nombre]
-    #     self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo)
+    @Rule(
+        TiempoVia(via=MATCH.via_nombre, tiempo_estimado=MATCH.tiempo),
+        Via(nombre=MATCH.via_nombre, afectada_por=MATCH.via_afectada_por),
+        Evento(tipo=MATCH.evento_tipo, duracion=MATCH.evento_duracion),
+        NOT(TiempoVia(via=MATCH.via_nombre, incluye_tiempos_eventos=True)),
+        salience=3
+    )
+    def agregar_tiempos_eventos(self, via_nombre, via_afectada_por, tiempo, evento_tipo, evento_duracion):
+        """
+        Agrega el tiempo que se demoran los eventos al tiempo estimado de atravesar la vía
+        """
+        # verificar si el evento afecta esta via
+        evento_afecta_via = False
+        for evento in via_afectada_por:
+            if evento == evento_tipo:
+                evento_afecta_via = True
+                break
+
+        if not evento_afecta_via:
+            return
+
+        nuevo_tiempo = tiempo + evento_duracion
+        print(
+            f"Cálculo (incluyendo {evento_tipo}) de tiempo estimado para via {via_nombre}: {nuevo_tiempo}"
+        )
+        tiempo_via = self.__tiempos_via[via_nombre]
+        tiempo_via = self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_eventos=True)
+        self.__tiempos_via[via_nombre] = tiempo_via
 
     @Rule(
         Ruta(numeracion=MATCH.numeracion, tiene_nodos=MATCH.nodos), NOT(TiempoRuta(ruta=MATCH.numeracion))
