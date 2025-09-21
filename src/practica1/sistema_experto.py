@@ -69,7 +69,6 @@ class Ruta(Fact):
         - vias: lista de vias por donde pasa la ruta (los nombres de las vias)
         - origen: el nodo donde inicia la ruta (el numero de la intersección)
         - destino: el nodo donde termina la ruta (el numero de la intersección)
-        - distancia: la distancia total que recorre esta ruta FIXME: eliminar esta?
     """
 
 
@@ -126,6 +125,15 @@ class TiempoRuta(Fact):
     """
 
 
+class DistanciaRuta(Fact):
+    """
+    Representa la distancia total en kilómetros que recorre una ruta
+    Atributos:
+        - distancia: distancia en kilómetros
+        - ruta: la numeracion de la ruta con esta distancia
+    """
+
+
 class Motor(KnowledgeEngine):
     def __init__(self):
         # en self.__vias van a estar todos los hechos declarados de tipo Via (la llave es el nombre de la via)
@@ -147,6 +155,9 @@ class Motor(KnowledgeEngine):
 
         # en self.__tiempos_ruta van a estar todos los hechos declarados de tipo TiempoRuta (la llave es la numeracion de la ruta)
         self.__tiempos_ruta = {}
+
+        # en self.__distancias_ruta van a estar todos los hechos declarados de tipo DistanciaRuta (la llave es la numeracion de la ruta)
+        self.__distancias_ruta = {}
 
         super().__init__()
 
@@ -254,6 +265,17 @@ class Motor(KnowledgeEngine):
             )
             self.retract(self.__rutas[ruta_numeracion])
             del self.__rutas[ruta_numeracion]
+
+    @Rule(Ruta(numeracion=MATCH.numeracion, vias=MATCH.vias), NOT(DistanciaRuta(ruta=MATCH.numeracion)))
+    def calcular_distancia_rutas(self, numeracion, vias):
+        distancia = 0
+        for nombre_via in vias:
+            via = self.__vias[nombre_via]
+            distancia += via["longitud"]
+
+        print(f"Distancia de ruta {numeracion} calculada: {distancia} km")
+        hecho = self.declare(DistanciaRuta(ruta=numeracion, distancia=distancia))
+        self.__distancias_ruta[numeracion] = hecho
 
     @Rule(
         Via(
@@ -457,11 +479,26 @@ class Motor(KnowledgeEngine):
         tiempo_via = self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_bonificacion_bidireccional=True)
         self.__tiempos_via[via_nombre] = tiempo_via
 
-    @Rule()
-    def regla15(self):
-        pass
+    @Rule(
+        Ruta(numeracion=MATCH.numeracion),
+        DistanciaRuta(ruta=MATCH.numeracion, distancia=MATCH.distancia),
+        salience=3
+    )
+    def eliminar_rutas_muy_largas(self, numeracion, distancia):
+        """
+        Elimina rutas cuya distancia es excesiva comparada con la más corta.
+        """
+        min_distancia = inf
+        for distancia_ruta in self.__distancias_ruta.values():
+            if distancia_ruta["distancia"] < min_distancia:
+                min_distancia = distancia_ruta["distancia"]
 
-    @Rule(NOT(Fact()))
+        if distancia > (3 * min_distancia):  # 3 veces más larga
+            print(f"Eliminando ruta {numeracion} por ser demasiado larga")
+            self.retract(self.__rutas[numeracion])
+            del self.__rutas[numeracion]
+
+    @Rule(NOT(Fact()), salience=0)
     def recomendacion_final(self):
         mejor_ruta = None
         mejor_ruta_tiempo = inf
