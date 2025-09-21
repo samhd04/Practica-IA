@@ -99,6 +99,10 @@ g.add((RUTA.tieneNodos,RDF.type,RDF.Property))
 g.add((RUTA.tieneNodos,RDFS.domain,RUTA.Ruta))
 g.add((RUTA.tieneNodos,RDFS.range,RUTA.Interseccion))
 
+g.add((RUTA.tieneVias, RDF.type, RDF.Property))
+g.add((RUTA.tieneVias, RDFS.domain, RUTA.Ruta))
+g.add((RUTA.tieneVias, RDFS.range, RUTA.Via))
+
 g.add((RUTA.origen,RDF.type,RDF.Property))
 g.add((RUTA.origen,RDFS.domain,RUTA.Ruta))
 g.add((RUTA.origen,RDFS.range,RUTA.Interseccion))
@@ -707,6 +711,12 @@ def agregar_ruta_al_grafo(ruta, id, origen, destino):
     lista_nodos = BNode()
     Collection(g, lista_nodos, nodos_ruta)
     g.add((ruta_node, RUTA.tieneNodos, lista_nodos))
+
+    # Secuencia de vias
+    vias_ruta = [via for _, via in ruta if via is not None]
+    lista_vias = BNode()
+    Collection(g, lista_vias, vias_ruta)
+    g.add((ruta_node, RUTA.tieneVias, lista_vias))
     
     return ruta_node
 
@@ -714,31 +724,46 @@ puntos_referencia = [unal, estadio, exito, luisamigo, estacion, piloto, carlose]
 
 mapa_origen_destino = {}
 for punto in puntos_referencia:
+    inters = []
     for _, _, inter in g.triples((punto, RUTA.seRelacionaCon, None)):
-        mapa_origen_destino[punto] = inter
+        inters.append(inter)
+    mapa_origen_destino[punto] = inters
 
 contador = 1
-for p_origen, origen in mapa_origen_destino.items():
-    for p_destino, destino in mapa_origen_destino.items():
-        if origen == destino:
+for p_origen, origenes in mapa_origen_destino.items():
+    for p_destino, destinos in mapa_origen_destino.items():
+        if p_origen == p_destino:
             continue
-        rutas = rutas_sin_repetir_vias(G, origen, destino, cutoff=6)
-        for ruta in rutas:
-            agregar_ruta_al_grafo(ruta, contador, origen, destino)
-            contador += 1
+        for origen in origenes:
+            for destino in destinos:
+                if origen == destino:
+                    continue
+                rutas = rutas_sin_repetir_vias(G, origen, destino, cutoff=6)
+                for ruta in rutas:
+                    agregar_ruta_al_grafo(ruta, contador, origen, destino)
+                    contador += 1
 
 print("Total de tripletas con todas las rutas:", len(g))
 
 
-inicio = intersecciones["Interseccion30"]
-fin = intersecciones["Interseccion5"]
 
-rutas = rutas_sin_repetir_vias(G, inicio, fin, cutoff=6)
+inicios = [v for (_, _, v) in g.triples((unal, RUTA.seRelacionaCon, None))]
+fines = [v for (_, _, v) in g.triples((piloto, RUTA.seRelacionaCon, None))]
 
-print(f"Se encontraron {len(rutas)} rutas:\n")
-for i, ruta in enumerate(rutas, 1):
+rutas_totales = []
+for inicio in inicios:
+    for fin in fines:
+        rutas = rutas_sin_repetir_vias(G, inicio, fin, cutoff=6)
+        rutas_totales.extend(rutas)
+
+print(f"Se encontraron {len(rutas_totales)} rutas entre UNAL y Piloto:\n")
+for i, ruta in enumerate(rutas_totales, 1):
     partes = []
+    num_inicio = mapa_numeros.get(ruta[0][0], "?")
+    partes.append(f"Inicio → {num_inicio}")
     for nodo, via in ruta[1:]:
         num = mapa_numeros.get(nodo, "?")
         partes.append(f"{via.split('#')[-1]} → {num}")
     print(f"Ruta {i}: " + " | ".join(partes))
+
+
