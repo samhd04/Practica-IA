@@ -230,25 +230,11 @@ def _traducir_atributo(
         case RUTA.afectaVia:
             return "afecta_via", _uri_ref_id(tripletas, objs)
         case RUTA.seRelacionaCon:
-            # FIXME: confirmar esta traducción
             return "se_relaciona_con", _uri_ref_ids(tripletas, objs, id="numero")
         case RUTA.conectaCon:
             return "conecta_con", _uri_ref_ids(tripletas, objs)
-        case RUTA.tieneSemaforo:
-            # FIXME confirmar
-            # se ignora porque ya se agrega esta información con la propiedad estaEnVia
-            # del semaforo
-            return None, None
-        case RUTA.tieneSemaforoObj:
-            # FIXME confirmar
-            # se ignora porque ya se agrega esta información con la propiedad estaEnVia
-            # del semaforo
-            return None, None
         case RUTA.esConectada:
-            # FIXME confirmar
-            # se ignora porque ya se agrega esta información con la propiedad conectaCon
-            # de la intersección
-            return None, None
+            return "es_conectada", _uri_ref_ids(tripletas, objs, id="numero")
         case RUTA.tiempoEspera:
             return "tiempo_espera", _literal(objs, xsd_type=XSD.double)
         case RUTA.intersectaCon:

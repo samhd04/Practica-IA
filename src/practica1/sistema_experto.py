@@ -20,10 +20,10 @@ class Via(Fact):
     Atributos:
         - nombre: el nombre de la vía
         - tipo: calle | avenida | autopista | carrera | transversal
-        - velocidad_promedio: un valor de tipo float en kilometros/hora
-        - longitud: longitud de la vía en metros
-        - fluidez: Muy mala | Mala | Aceptable | Buena | Muy buena
-        - es_bidireccional: ... FIXME
+        - velocidad_promedio: un valor de tipo float en kilómetros/hora
+        - longitud: longitud de la vía en kilómetros
+        - afectada_por: una lista de tipos de eventos que afectan esta via
+        - es_bidireccional: True si esta via es bidireccional
     """
 
 
@@ -33,9 +33,11 @@ class Nodo(Fact):
     Atributos:
         - tipo: Punto_de_referencia | intersección
         - nombre: Si es un punto de referencia, el nombre de este
+        - numero: el numero de la intersección si este nodo es una intersección
         - vias_conectadas: Si es una intersección, las vías que esta conecta
-        - se_relaciona_con: ... FIXME
-        - intersecta_con: ... FIXME
+        - se_relaciona_con: intersecciones con las cuales este nodo se relaciona si este nodo es un punto de referencia
+        - intersecta_con: otras intersecciones con las que este nodo intersecta si este nodo es una intersección
+        - conecta_con: una lista de nombres de vias con las cuales se conecta este nodo si es una intersección
     """
 
 
@@ -51,10 +53,10 @@ class Evento(Fact):
     """
     Representa un evento que está afectando una vía
     Atributos:
-        - tipo: choque | obra | manifestación
+        - tipo: Vehiculo Detenido | Obra Vial | Obra Menor | Manifestacion | Accidente Leve | Accidente Grave | Colapso Estructural
         - afecta_via: el nombre de la via que es afectada por este evento
         - cierre_total: indica si este evento causa un cierre total (True/False)
-        - duracion: ... FIXME
+        - duracion: tiempo en minutos que este evento afecta la via
     """
 
 
@@ -62,13 +64,16 @@ class Ruta(Fact):
     """
     Representa una ruta (un conjunto ordenado de vías) que un carro puede seguir
     Atributos:
-        - nombre: el nombre de la ruta
-        - tiene_nodos: lista de nombres de intersecciones
-        - distancia: la distancia total que recorre esta ruta
-        - tiempo_estimado: ... FIXME
+        - numeracion: el nombre de la ruta
+        - tiene_nodos: lista de intersecciones por donde pasa la ruta (los numeros de las intersecciones)
+        - vias: lista de vias por donde pasa la ruta (los nombres de las vias)
+        - origen: el nodo donde inicia la ruta (el numero de la intersección)
+        - destino: el nodo donde termina la ruta (el numero de la intersección)
+        - distancia: la distancia total que recorre esta ruta FIXME: eliminar esta?
     """
 
 
+# FIXME: si es necesaria esta clase?
 class Recomendacion(Fact):
     """
     Representa la recomendación de ruta que el sistema experto entrega
@@ -277,7 +282,7 @@ class Motor(KnowledgeEngine):
         Cálculo inicial del tiempo estimado que toma atravesar una via
         """
         tiempo = longitud / velocidad_promedio
-        print(f"Cálculo inicial de tiempo estimado para via {nombre}: {tiempo}")
+        print(f"Cálculo inicial de tiempo estimado para via {nombre}: {tiempo} horas")
         hecho = self.declare(TiempoVia(via=nombre, tiempo_estimado=tiempo))
         self.__tiempos_via[nombre] = hecho
 
@@ -291,9 +296,10 @@ class Motor(KnowledgeEngine):
         """
         Agrega el tiempo que se demoran los semáforos al tiempo estimado de atravesar la vía
         """
-        nuevo_tiempo = tiempo + tiempo_semaforo
+        # El nuevo tiempo será el tiempo anterior sumado al tiempo del semaforo convertido de minutos a horas
+        nuevo_tiempo = tiempo + (tiempo_semaforo / 60)
         print(
-            f"Cálculo (incluyendo semaforos) de tiempo estimado para via {via_nombre}: {nuevo_tiempo}"
+            f"Cálculo (incluyendo semaforos) de tiempo estimado para via {via_nombre}: {nuevo_tiempo} horas"
         )
         tiempo_via = self.__tiempos_via[via_nombre]
         tiempo_via = self.modify(
@@ -324,7 +330,9 @@ class Motor(KnowledgeEngine):
         if not evento_afecta_via:
             return
 
-        nuevo_tiempo = tiempo + evento_duracion
+        # el nuevo tiempo será el tiempo anterior sumado a la duración del evento convertido de
+        # minutos a horas
+        nuevo_tiempo = tiempo + (evento_duracion / 60)
         print(
             f"Cálculo (incluyendo {evento_tipo}) de tiempo estimado para via {via_nombre}: {nuevo_tiempo}"
         )
@@ -358,27 +366,10 @@ class Motor(KnowledgeEngine):
         )
         self.__tiempos_ruta[numeracion] = tiempo_ruta
 
-    @Rule(Fluidez(fluidez="nula", via=MATCH.via), salience=4)
-    def fluidez_nula(self, via):
-        """
-        Regla que elimina las vias con fluidez nula, y por lo tanto también elimina todas las rutas
-        que transitan esa vía eliminada
-        """
-        print(f"Eliminando via {via} debido a que presenta una fluidez nula")
-        self.retract(self.__vias[via])
-        del self.__vias[via]
-
-        for ruta_numeracion, ruta in self.__rutas.items():
-            if via in ruta["vias"]:
-                print(
-                    f"\tTambién eliminando ruta {ruta_numeracion} que contiene esta via"
-                )
-                self.retract(ruta)
-                del self.__rutas[ruta_numeracion]
-
     @Rule(
         Via(nombre=MATCH.via_nombre, velocidad_promedio=MATCH.velocidad),
         Semaforo(via=MATCH.via_nombre),
+        salience=7
     )
     def calcular_fluidez_con_semaforo(self, via_nombre, velocidad):
         """
@@ -398,6 +389,7 @@ class Motor(KnowledgeEngine):
     @Rule(
         Via(nombre=MATCH.via_nombre, velocidad_promedio=MATCH.velocidad),
         NOT(Semaforo(via=MATCH.via_nombre)),
+        salience=7
     )
     def calcular_fluidez_sin_semaforo(self, via_nombre, velocidad):
         """
@@ -413,6 +405,24 @@ class Motor(KnowledgeEngine):
             f"Fluidez de la via {via_nombre} (sin semáforo) calculada: {fluidez_literal}"
         )
         self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
+
+    @Rule(Fluidez(fluidez="nula", via=MATCH.via), salience=6)
+    def fluidez_nula(self, via):
+        """
+        Regla que elimina las vias con fluidez nula, y por lo tanto también elimina todas las rutas
+        que transitan esa vía eliminada
+        """
+        print(f"Eliminando via {via} debido a que presenta una fluidez nula")
+        self.retract(self.__vias[via])
+        del self.__vias[via]
+
+        for ruta_numeracion, ruta in self.__rutas.items():
+            if via in ruta["vias"]:
+                print(
+                    f"\tTambién eliminando ruta {ruta_numeracion} que contiene via con fluidez nula"
+                )
+                self.retract(ruta)
+                del self.__rutas[ruta_numeracion]
 
     @Rule()
     def regla13(self):
