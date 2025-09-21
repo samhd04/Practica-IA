@@ -500,6 +500,9 @@ class Motor(KnowledgeEngine):
 
     @Rule(NOT(Fact()), salience=0)
     def recomendacion_final(self):
+        """
+        Recomienda una ruta al usuario luego de ejecutar todas las demás reglas
+        """
         mejor_ruta = None
         mejor_ruta_tiempo = inf
         for ruta_numeracion, ruta in self.__rutas.items():
