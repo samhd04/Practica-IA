@@ -156,6 +156,27 @@ class Motor(KnowledgeEngine):
                     self.__intersecciones[fact["numero"]] = fact
         return super().declare(*facts)
 
+    @Rule(Evento(cierre_total=True, tipo=MATCH.evento_tipo), Via(nombre=MATCH.via_nombre, afectada_por=MATCH.via_afectada_por), salience=5)
+    def evento_cierre_total(self, via_nombre, evento_tipo, via_afectada_por):
+        evento_afecta_via = False
+        for evento in via_afectada_por:
+            if evento == evento_tipo:
+                evento_afecta_via = True
+                break
+
+        if not evento_afecta_via:
+            return
+
+        print(f"Eliminando via {via_nombre} pues está afectada por evento de cierre total: {evento_tipo}")
+        self.retract(self.__vias[via_nombre])
+        del self.__vias[via_nombre]
+
+        for ruta_numeracion, ruta in self.__rutas.items():
+            if via_nombre in ruta["vias"]:
+                print(f"También eliminando la ruta {ruta_numeracion} que contiene via con cierre total")
+                self.retract(ruta)
+                del self.__rutas[ruta_numeracion]
+
     @Rule(
         Ruta(numeracion=MATCH.ruta_numeracion, origen=MATCH.ruta_origen),
         Nodo(
@@ -359,10 +380,6 @@ class Motor(KnowledgeEngine):
         self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
 
     @Rule()
-    def evento_cierre_total(self):
-        pass
-
-    @Rule()
     def regla13(self):
         pass
 
@@ -376,8 +393,6 @@ class Motor(KnowledgeEngine):
 
     @Rule(NOT(Fact()))
     def recomendacion_final(self):
-        print("Ya no quedan más ")
-
         mejor_ruta = None
         mejor_ruta_tiempo = inf
         for ruta_numeracion, ruta in self.__rutas.items():
@@ -394,4 +409,7 @@ class Motor(KnowledgeEngine):
         print(f"La mejor ruta es: {mejor_ruta["numeracion"]}")
         for via in mejor_ruta["vias"]:
             print(f"\t{via}")
-
+        print("Pasando por las intersecciones:")
+        for interseccion_numero in mejor_ruta["tiene_nodos"]:
+            interseccion = self.__intersecciones[interseccion_numero]
+            print(f"\t{interseccion_numero} ({list(interseccion["conecta_con"])})")
