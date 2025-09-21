@@ -3,6 +3,7 @@ Sistema experto, contiene definiciones de clases de hechos y el motor de inferen
 """
 
 from collections import defaultdict
+from math import inf
 from experta import MATCH, Fact, KnowledgeEngine, Rule, NOT
 import random
 
@@ -78,7 +79,6 @@ class Recomendacion(Fact):
     """
 
 
-# FIXME quitar esta clase de hecho:
 class Fluidez(Fact):
     """
     Representa la fluidez de una vía
@@ -122,7 +122,7 @@ class Motor(KnowledgeEngine):
         # en self.__vias van a estar todos los hechos declarados de tipo Via (la llave es el nombre de la via)
         self.__vias = {}
 
-        # en self.__rutas van a estar todos los hechos declarados de tipo Ruta (la llave es el nombre de la ruta)
+        # en self.__rutas van a estar todos los hechos declarados de tipo Ruta (la llave es la numeracion de la ruta)
         self.__rutas = {}
 
         # en self.__intersecciones van a estar todos los hechos declarados de tipo Nodo que son
@@ -135,6 +135,9 @@ class Motor(KnowledgeEngine):
 
         # en self.__tiempos_via van a estar todos los hechos declarados de tipo TiempoVia (la llave es el nombre de la via)
         self.__tiempos_via = {}
+
+        # en self.__tiempos_ruta van a estar todos los hechos declarados de tipo TiempoRuta (la llave es la numeracion de la ruta)
+        self.__tiempos_ruta = {}
 
         super().__init__()
 
@@ -183,6 +186,7 @@ class Motor(KnowledgeEngine):
                 f"Eliminando ruta {ruta_numeracion} debido a que no inicia en el punto de partida deseado"
             )
             self.retract(self.__rutas[ruta_numeracion])
+            del self.__rutas[ruta_numeracion]
 
     @Rule(
         Ruta(nombre=MATCH.ruta_numeracion, tiene_nodos=MATCH.ruta_nodos),
@@ -214,28 +218,22 @@ class Motor(KnowledgeEngine):
                 f"Eliminando ruta {ruta_numeracion} debido a que no termina en el punto de llegada deseado"
             )
             self.retract(self.__rutas[ruta_numeracion])
-
-    @Rule(Evento(tipo=MATCH.tipo, afecta_via=MATCH.via), salience=3)
-    def evento_en_via(self, tipo, via):
-        # FIXME: definir esto
-        fluidez = {"choque": "muy mala", "obra": "mala", "manifestación": "nula"}[tipo]
-        print(f"Fluidez {fluidez} debido a {tipo} en la vía {via}")
-        self.declare(Fluidez(fluidez=fluidez, via=via))
+            del self.__rutas[ruta_numeracion]
 
     @Rule(
         Via(
             nombre=MATCH.nombre,
-            velocidad_promedio=MATCH.velocidad_maxima,
+            velocidad_promedio=MATCH.velocidad_promedio,
             longitud=MATCH.longitud,
         ),
         NOT(TiempoVia(via=MATCH.nombre)),
         salience=4
     )
-    def calcular_tiempo_via(self, nombre, velocidad_maxima, longitud):
+    def calcular_tiempo_via(self, nombre, velocidad_promedio, longitud):
         """
         Cálculo inicial del tiempo estimado que toma atravesar una via
         """
-        tiempo = longitud / velocidad_maxima
+        tiempo = longitud / velocidad_promedio
         print(f"Cálculo inicial de tiempo estimado para via {nombre}: {tiempo}")
         hecho = self.declare(TiempoVia(via=nombre, tiempo_estimado=tiempo))
         self.__tiempos_via[nombre] = hecho
@@ -287,8 +285,12 @@ class Motor(KnowledgeEngine):
         tiempo_via = self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_eventos=True)
         self.__tiempos_via[via_nombre] = tiempo_via
 
+    @Rule()
+    def agregar_tiempo_por_fluidez(self):
+        pass
+
     @Rule(
-        Ruta(numeracion=MATCH.numeracion, tiene_vias=MATCH.vias), NOT(TiempoRuta(ruta=MATCH.numeracion))
+        Ruta(numeracion=MATCH.numeracion, vias=MATCH.vias), NOT(TiempoRuta(ruta=MATCH.numeracion))
     )
     def calcular_tiempo_ruta(self, numeracion, vias):
         """
@@ -301,7 +303,8 @@ class Motor(KnowledgeEngine):
             tiempo_estimado += tiempo_via["tiempo_estimado"]
 
         print(f"Tiempo de la ruta {numeracion} calculado: {tiempo_estimado}")
-        self.declare(TiempoRuta(ruta=numeracion, tiempo_estimado=tiempo_estimado))
+        tiempo_ruta = self.declare(TiempoRuta(ruta=numeracion, tiempo_estimado=tiempo_estimado))
+        self.__tiempos_ruta[numeracion] = tiempo_ruta
 
 
     @Rule(Fluidez(fluidez="nula", via=MATCH.via), salience=4)
@@ -312,11 +315,13 @@ class Motor(KnowledgeEngine):
         """
         print(f"Eliminando via {via} debido a que presenta una fluidez nula")
         self.retract(self.__vias[via])
+        del self.__vias[via]
 
         for ruta_numeracion, ruta in self.__rutas.items():
             if via in ruta["vias"]:
                 print(f"\tTambién eliminando ruta {ruta_numeracion} que contiene esta via")
                 self.retract(ruta)
+                del self.__rutas[ruta_numeracion]
 
     @Rule(
     Via(nombre=MATCH.via_nombre, velocidad_promedio=MATCH.velocidad),
@@ -354,11 +359,7 @@ class Motor(KnowledgeEngine):
         self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
 
     @Rule()
-    def regla11(self):
-        pass
-
-    @Rule()
-    def regla12(self):
+    def evento_cierre_total(self):
         pass
 
     @Rule()
@@ -370,5 +371,27 @@ class Motor(KnowledgeEngine):
         pass
 
     @Rule()
-    def recomendacion_final(self):
+    def regla15(self):
         pass
+
+    @Rule(NOT(Fact()))
+    def recomendacion_final(self):
+        print("Ya no quedan más ")
+
+        mejor_ruta = None
+        mejor_ruta_tiempo = inf
+        for ruta_numeracion, ruta in self.__rutas.items():
+            tiempo_ruta = self.__tiempos_ruta[ruta_numeracion]
+            tiempo = tiempo_ruta["tiempo_estimado"]
+            if tiempo < mejor_ruta_tiempo:
+                mejor_ruta = ruta
+                mejor_ruta_tiempo = tiempo
+
+        if mejor_ruta is None:
+            print("No fue posible encontrar la mejor ruta")
+            return
+
+        print(f"La mejor ruta es: {mejor_ruta["numeracion"]}")
+        for via in mejor_ruta["vias"]:
+            print(f"\t{via}")
+
