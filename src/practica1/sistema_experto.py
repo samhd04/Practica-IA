@@ -17,7 +17,7 @@ random.seed(42)
 class Via(Fact):
     """
     Representa una vía por la cual transitan carros
-    Atributos:
+    Campos:
         - nombre: el nombre de la vía
         - tipo: calle | avenida | autopista | carrera | transversal
         - velocidad_promedio: un valor de tipo float en kilómetros/hora
@@ -30,7 +30,7 @@ class Via(Fact):
 class Nodo(Fact):
     """
     Representa un punto de referencia o una intersección
-    Atributos:
+    Campos:
         - tipo: Punto_de_referencia | intersección
         - nombre: Si es un punto de referencia, el nombre de este
         - numero: el numero de la intersección si este nodo es una intersección
@@ -43,7 +43,7 @@ class Nodo(Fact):
 
 class Semaforo(Fact):
     """
-    Atributos:
+    Campos:
         - tiempo_espera: valor de tipo entero, tiempo en segundos que el semaforo está en rojo
         - via: el nombre de la vía en la que el semanforo se encuentra
     """
@@ -52,7 +52,7 @@ class Semaforo(Fact):
 class Evento(Fact):
     """
     Representa un evento que está afectando una vía
-    Atributos:
+    Campos:
         - tipo: Vehiculo Detenido | Obra Vial | Obra Menor | Manifestacion | Accidente Leve | Accidente Grave | Colapso Estructural
         - afecta_via: el nombre de la via que es afectada por este evento
         - cierre_total: indica si este evento causa un cierre total (True/False)
@@ -63,7 +63,7 @@ class Evento(Fact):
 class Ruta(Fact):
     """
     Representa una ruta (un conjunto ordenado de vías) que un carro puede seguir
-    Atributos:
+    Campos:
         - numeracion: el nombre de la ruta
         - tiene_nodos: lista de intersecciones por donde pasa la ruta (los numeros de las intersecciones)
         - vias: lista de vias por donde pasa la ruta (los nombres de las vias)
@@ -72,23 +72,10 @@ class Ruta(Fact):
     """
 
 
-# FIXME: si es necesaria esta clase?
-class Recomendacion(Fact):
-    """
-    Representa la recomendación de ruta que el sistema experto entrega
-    Atributos:
-        - origen: el nombre del punto de referencia desde el que se parte
-        - destino: el nombre del punto de referencia al que se llega
-        - ruta: el nombre de la ruta recomendada
-        - fluidez
-        - tiempo_estimado: tiempo en minutos que toma seguir la ruta
-    """
-
-
 class Fluidez(Fact):
     """
     Representa la fluidez de una vía
-    Atributos:
+    Campos:
         - fluidez: nula | muy mala | mala | aceptable | buena | muy buena
         - via: el nombre de la via con esta fluidez
     """
@@ -97,7 +84,7 @@ class Fluidez(Fact):
 class Objetivo(Fact):
     """
     Representa el objetivo del usuario (desde dónde quiere partir y adónde quiere llegar)
-    Atributos:
+    Campos:
         - desde: lugar de partida (nombre de un punto de referencia)
         - hasta: lugar al que se desea llegar (nombre de un punto de referencia)
     """
@@ -106,7 +93,7 @@ class Objetivo(Fact):
 class TiempoVia(Fact):
     """
     Representa el tiempo que toma atravesar una vía
-    Atributos:
+    Campos:
         - via: el nombre de la via
         - tiempo_estimado: tiempo en minutos que toma atravesar la via
         - incluye_tiempos_semaforo: True si los incluye
@@ -119,7 +106,7 @@ class TiempoVia(Fact):
 class TiempoRuta(Fact):
     """
     Representa el tiempo en minutos que se demoraría un carro en seguir una ruta
-    Atributos:
+    Campos:
         - ruta: el nombre de la ruta
         - tiempo_estimado: tiempo en minutos que toma atravesar la ruta
     """
@@ -128,7 +115,7 @@ class TiempoRuta(Fact):
 class DistanciaRuta(Fact):
     """
     Representa la distancia total en kilómetros que recorre una ruta
-    Atributos:
+    Campos:
         - distancia: distancia en kilómetros
         - ruta: la numeracion de la ruta con esta distancia
     """
