@@ -10,7 +10,9 @@ import random
 from numpy import isin
 
 from practica1.sistema_logica_difusa import calcular_fluidez_via
+
 random.seed(42)
+
 
 class Via(Fact):
     """
@@ -156,7 +158,11 @@ class Motor(KnowledgeEngine):
                     self.__intersecciones[fact["numero"]] = fact
         return super().declare(*facts)
 
-    @Rule(Evento(cierre_total=True, tipo=MATCH.evento_tipo), Via(nombre=MATCH.via_nombre, afectada_por=MATCH.via_afectada_por), salience=5)
+    @Rule(
+        Evento(cierre_total=True, tipo=MATCH.evento_tipo),
+        Via(nombre=MATCH.via_nombre, afectada_por=MATCH.via_afectada_por),
+        salience=5,
+    )
     def evento_cierre_total(self, via_nombre, evento_tipo, via_afectada_por):
         evento_afecta_via = False
         for evento in via_afectada_por:
@@ -167,15 +173,23 @@ class Motor(KnowledgeEngine):
         if not evento_afecta_via:
             return
 
-        print(f"Eliminando via {via_nombre} pues está afectada por evento de cierre total: {evento_tipo}")
+        print(
+            f"Eliminando via {via_nombre} pues está afectada por evento de cierre total: {evento_tipo}"
+        )
         self.retract(self.__vias[via_nombre])
         del self.__vias[via_nombre]
 
+        rutas_eliminadas = []
         for ruta_numeracion, ruta in self.__rutas.items():
             if via_nombre in ruta["vias"]:
-                print(f"También eliminando la ruta {ruta_numeracion} que contiene via con cierre total")
+                print(
+                    f"También eliminando la ruta {ruta_numeracion} que contiene via con cierre total"
+                )
                 self.retract(ruta)
-                del self.__rutas[ruta_numeracion]
+                rutas_eliminadas.append(ruta_numeracion)
+
+        for ruta in rutas_eliminadas:
+            del self.__rutas[ruta]
 
     @Rule(
         Ruta(numeracion=MATCH.ruta_numeracion, origen=MATCH.ruta_origen),
@@ -201,7 +215,9 @@ class Motor(KnowledgeEngine):
                 break
 
         if ruta_sirve:
-            print(f"La ruta {ruta_numeracion} sirve (inicia en el punto de origen deseado)")
+            print(
+                f"La ruta {ruta_numeracion} sirve (inicia en el punto de origen deseado)"
+            )
         else:
             print(
                 f"Eliminando ruta {ruta_numeracion} debido a que no inicia en el punto de partida deseado"
@@ -233,7 +249,9 @@ class Motor(KnowledgeEngine):
                 break
 
         if ruta_sirve:
-            print(f"La ruta {ruta_numeracion} sirve (termina en el punto de llegada deseado)")
+            print(
+                f"La ruta {ruta_numeracion} sirve (termina en el punto de llegada deseado)"
+            )
         else:
             print(
                 f"Eliminando ruta {ruta_numeracion} debido a que no termina en el punto de llegada deseado"
@@ -248,7 +266,7 @@ class Motor(KnowledgeEngine):
             longitud=MATCH.longitud,
         ),
         NOT(TiempoVia(via=MATCH.nombre)),
-        salience=4
+        salience=4,
     )
     def calcular_tiempo_via(self, nombre, velocidad_promedio, longitud):
         """
@@ -263,7 +281,7 @@ class Motor(KnowledgeEngine):
         TiempoVia(via=MATCH.via_nombre, tiempo_estimado=MATCH.tiempo),
         Semaforo(via=MATCH.via_nombre, tiempo_espera=MATCH.tiempo_semaforo),
         NOT(TiempoVia(via=MATCH.via_nombre, incluye_tiempos_semaforo=True)),
-        salience=3
+        salience=3,
     )
     def agregar_tiempos_semaforos(self, via_nombre, tiempo, tiempo_semaforo):
         """
@@ -274,7 +292,9 @@ class Motor(KnowledgeEngine):
             f"Cálculo (incluyendo semaforos) de tiempo estimado para via {via_nombre}: {nuevo_tiempo}"
         )
         tiempo_via = self.__tiempos_via[via_nombre]
-        tiempo_via = self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_semaforo=True)
+        tiempo_via = self.modify(
+            tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_semaforo=True
+        )
         self.__tiempos_via[via_nombre] = tiempo_via
 
     @Rule(
@@ -282,9 +302,11 @@ class Motor(KnowledgeEngine):
         Via(nombre=MATCH.via_nombre, afectada_por=MATCH.via_afectada_por),
         Evento(tipo=MATCH.evento_tipo, duracion=MATCH.evento_duracion),
         NOT(TiempoVia(via=MATCH.via_nombre, incluye_tiempos_eventos=True)),
-        salience=3
+        salience=3,
     )
-    def agregar_tiempos_eventos(self, via_nombre, via_afectada_por, tiempo, evento_tipo, evento_duracion):
+    def agregar_tiempos_eventos(
+        self, via_nombre, via_afectada_por, tiempo, evento_tipo, evento_duracion
+    ):
         """
         Agrega el tiempo que se demoran los eventos al tiempo estimado de atravesar la vía
         """
@@ -303,7 +325,9 @@ class Motor(KnowledgeEngine):
             f"Cálculo (incluyendo {evento_tipo}) de tiempo estimado para via {via_nombre}: {nuevo_tiempo}"
         )
         tiempo_via = self.__tiempos_via[via_nombre]
-        tiempo_via = self.modify(tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_eventos=True)
+        tiempo_via = self.modify(
+            tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_eventos=True
+        )
         self.__tiempos_via[via_nombre] = tiempo_via
 
     @Rule()
@@ -311,7 +335,8 @@ class Motor(KnowledgeEngine):
         pass
 
     @Rule(
-        Ruta(numeracion=MATCH.numeracion, vias=MATCH.vias), NOT(TiempoRuta(ruta=MATCH.numeracion))
+        Ruta(numeracion=MATCH.numeracion, vias=MATCH.vias),
+        NOT(TiempoRuta(ruta=MATCH.numeracion)),
     )
     def calcular_tiempo_ruta(self, numeracion, vias):
         """
@@ -324,9 +349,10 @@ class Motor(KnowledgeEngine):
             tiempo_estimado += tiempo_via["tiempo_estimado"]
 
         print(f"Tiempo de la ruta {numeracion} calculado: {tiempo_estimado}")
-        tiempo_ruta = self.declare(TiempoRuta(ruta=numeracion, tiempo_estimado=tiempo_estimado))
+        tiempo_ruta = self.declare(
+            TiempoRuta(ruta=numeracion, tiempo_estimado=tiempo_estimado)
+        )
         self.__tiempos_ruta[numeracion] = tiempo_ruta
-
 
     @Rule(Fluidez(fluidez="nula", via=MATCH.via), salience=4)
     def fluidez_nula(self, via):
@@ -340,43 +366,48 @@ class Motor(KnowledgeEngine):
 
         for ruta_numeracion, ruta in self.__rutas.items():
             if via in ruta["vias"]:
-                print(f"\tTambién eliminando ruta {ruta_numeracion} que contiene esta via")
+                print(
+                    f"\tTambién eliminando ruta {ruta_numeracion} que contiene esta via"
+                )
                 self.retract(ruta)
                 del self.__rutas[ruta_numeracion]
 
     @Rule(
-    Via(nombre=MATCH.via_nombre, velocidad_promedio=MATCH.velocidad),
-    Semaforo(via=MATCH.via_nombre)
+        Via(nombre=MATCH.via_nombre, velocidad_promedio=MATCH.velocidad),
+        Semaforo(via=MATCH.via_nombre),
     )
     def calcular_fluidez_con_semaforo(self, via_nombre, velocidad):
         """
         Regla para calcular fluidez cuando la vía tiene semáforo.
         La espera del semáforo se genera de forma aleatoria (30–120 segundos).
         """
-        congestion_val = random.randint(0, 100)           # Congestión aleatoria
-        espera_val = random.randint(30, 120)              # Espera en segundos (Colombia)
+        congestion_val = random.randint(0, 100)  # Congestión aleatoria
+        espera_val = random.randint(30, 120)  # Espera en segundos (Colombia)
 
         fluidez_literal = calcular_fluidez_via(congestion_val, velocidad, espera_val)
 
-        print(f"Fluidez de la via {via_nombre} (con semáforo) calculada: {fluidez_literal}")
+        print(
+            f"Fluidez de la via {via_nombre} (con semáforo) calculada: {fluidez_literal}"
+        )
         self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
-
 
     @Rule(
         Via(nombre=MATCH.via_nombre, velocidad_promedio=MATCH.velocidad),
-        NOT(Semaforo(via=MATCH.via_nombre))
+        NOT(Semaforo(via=MATCH.via_nombre)),
     )
     def calcular_fluidez_sin_semaforo(self, via_nombre, velocidad):
         """
         Regla para calcular fluidez cuando la vía no tiene semáforo.
         Espera en semáforo = 0.
         """
-        congestion_val = random.randint(0, 100)   # Congestión aleatoria
-        espera_val = 0                            # No hay semáforo
+        congestion_val = random.randint(0, 100)  # Congestión aleatoria
+        espera_val = 0  # No hay semáforo
 
         fluidez_literal = calcular_fluidez_via(congestion_val, velocidad, espera_val)
 
-        print(f"Fluidez de la via {via_nombre} (sin semáforo) calculada: {fluidez_literal}")
+        print(
+            f"Fluidez de la via {via_nombre} (sin semáforo) calculada: {fluidez_literal}"
+        )
         self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
 
     @Rule()
@@ -406,10 +437,10 @@ class Motor(KnowledgeEngine):
             print("No fue posible encontrar la mejor ruta")
             return
 
-        print(f"La mejor ruta es: {mejor_ruta["numeracion"]}")
+        print(f"La mejor ruta es: {mejor_ruta['numeracion']}")
         for via in mejor_ruta["vias"]:
             print(f"\t{via}")
         print("Pasando por las intersecciones:")
         for interseccion_numero in mejor_ruta["tiene_nodos"]:
             interseccion = self.__intersecciones[interseccion_numero]
-            print(f"\t{interseccion_numero} ({list(interseccion["conecta_con"])})")
+            print(f"\t{interseccion_numero} ({list(interseccion['conecta_con'])})")
