@@ -161,9 +161,13 @@ class Motor(KnowledgeEngine):
     @Rule(
         Evento(cierre_total=True, tipo=MATCH.evento_tipo),
         Via(nombre=MATCH.via_nombre, afectada_por=MATCH.via_afectada_por),
-        salience=5,
+        salience=6,
     )
     def evento_cierre_total(self, via_nombre, evento_tipo, via_afectada_por):
+        """
+        Esta regla elimina las vias que están afectadas por un evento de cierre total
+        También elimina todas las rutas que contienen esas vias eliminadas
+        """
         evento_afecta_via = False
         for evento in via_afectada_por:
             if evento == evento_tipo:
