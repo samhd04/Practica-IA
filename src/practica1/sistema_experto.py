@@ -285,7 +285,7 @@ class Motor(KnowledgeEngine):
         for nodo_nombre in nodos:
             nodo = self.__intersecciones[nodo_nombre]
             for via in nodo["conecta_con"]:
-                print(relacion)
+                print(via)
             # breakpoint()
             # tiempo_via = self.__tiempos_via[via_nombre]
             # tiempo_estimado += tiempo_via["tiempo_estimado"]
