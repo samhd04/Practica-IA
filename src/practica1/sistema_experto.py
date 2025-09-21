@@ -170,14 +170,15 @@ class Motor(KnowledgeEngine):
         Regla que elimina todas las rutas que inician en una intersección que no se relaciona con
         el punto de partida deseado
         """
-        print(f"Verificando si la ruta {ruta_numeracion} sirve (inicia en el punto de partida deseado)")
         ruta_sirve = False
         for nodo in punto_se_relaciona_con:
             if nodo == ruta_origen:
                 ruta_sirve = True
                 break
 
-        if not ruta_sirve:
+        if ruta_sirve:
+            print(f"La ruta {ruta_numeracion} sirve (inicia en el punto de origen deseado)")
+        else:
             print(
                 f"Eliminando ruta {ruta_numeracion} debido a que no inicia en el punto de partida deseado"
             )
@@ -200,14 +201,15 @@ class Motor(KnowledgeEngine):
         Regla que elimina todas las rutas que terminan en una intersección que no se relaciona con
         el punto de llegada deseado
         """
-        print(f"Verificando si la ruta {ruta_numeracion} sirve (termina en el punto de llegada deseado)")
         ruta_sirve = False
         for nodo in punto_se_relaciona_con:
             if nodo == ruta_nodos[-1]:
                 ruta_sirve = True
                 break
 
-        if not ruta_sirve:
+        if ruta_sirve:
+            print(f"La ruta {ruta_numeracion} sirve (termina en el punto de llegada deseado)")
+        else:
             print(
                 f"Eliminando ruta {ruta_numeracion} debido a que no termina en el punto de llegada deseado"
             )
@@ -284,8 +286,8 @@ class Motor(KnowledgeEngine):
 
         for nodo_nombre in nodos:
             nodo = self.__intersecciones[nodo_nombre]
-            for via in nodo["conecta_con"]:
-                print(via)
+            # for via in nodo["conecta_con"]:
+            #     print(via)
             # breakpoint()
             # tiempo_via = self.__tiempos_via[via_nombre]
             # tiempo_estimado += tiempo_via["tiempo_estimado"]
@@ -302,9 +304,9 @@ class Motor(KnowledgeEngine):
         print(f"Eliminando via {via} debido a que presenta una fluidez nula")
         self.retract(self.__vias[via])
 
-        for ruta_nombre, ruta in self.__rutas.items():
+        for ruta_numeracion, ruta in self.__rutas.items():
             if via in ruta["vias"]:
-                print(f"\tTambién eliminando ruta {ruta_nombre} que contiene esta via")
+                print(f"\tTambién eliminando ruta {ruta_numeracion} que contiene esta via")
                 self.retract(ruta)
 
     @Rule(
@@ -321,6 +323,7 @@ class Motor(KnowledgeEngine):
 
         fluidez_literal = calcular_fluidez_via(congestion_val, velocidad, espera_val)
 
+        print(f"Fluidez de la via {via_nombre} (con semáforo) calculada: {fluidez_literal}")
         self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
 
 
@@ -338,15 +341,8 @@ class Motor(KnowledgeEngine):
 
         fluidez_literal = calcular_fluidez_via(congestion_val, velocidad, espera_val)
 
+        print(f"Fluidez de la via {via_nombre} (sin semáforo) calculada: {fluidez_literal}")
         self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
-
-    @Rule()
-    def regla9(self):
-        pass
-
-    @Rule()
-    def regla10(self):
-        pass
 
     @Rule()
     def regla11(self):
@@ -365,5 +361,5 @@ class Motor(KnowledgeEngine):
         pass
 
     @Rule()
-    def regla15(self):
+    def recomendacion_final(self):
         pass
