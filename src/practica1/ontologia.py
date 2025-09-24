@@ -1,7 +1,7 @@
 """
 Componente Ontología y Razonamiento Semántico
 """
-
+#Importamos las librerías requeridas para la elaboración de la ontología
 from rdflib import Graph, Namespace, URIRef, BNode, Literal
 from rdflib.namespace import RDF, RDFS, XSD, DC, GEO
 from rdflib.collection import Collection
@@ -10,11 +10,15 @@ import networkx as nx
 import random
 import numpy as np
 
-random.seed(42)
-np.random.seed(42)
+'''Fijamos el valor de la semilla aleatoria para agregar tripletas al grafo de
+manera aleatoria simulando sucesos aleatorios en el contexto del trabajo'''
+random.seed(21)
+np.random.seed(21)
 
+#Se crea el grafo
 g = Graph()
 
+#Se crean los Namespaces y se usan Binds para enlazar las Uri a los Namespaces
 GEO = Namespace("http://www.w3.org/2003/01/geo/wgs84_pos#")
 RUTA = Namespace("http://example.org/mejor_ruta#")
 g.bind("ruta", RUTA)
@@ -51,102 +55,123 @@ g.add((RUTA.Via,RDFS.subClassOf,GEO.SpatialThing))
 
 #Propiedades
 #Via:
+#Nombre para la via que hereda de DC.title
 g.add((RUTA.nombre,RDF.type,RDF.Property))
 g.add((RUTA.nombre, RDFS.subPropertyOf, DC.title))
 g.add((RUTA.nombre,RDFS.domain,RUTA.Via))
 g.add((RUTA.nombre,RDFS.range,XSD.string))
 
+#Eventos que afectan a las vias
 g.add((RUTA.afectadaPor,RDF.type,RDF.Property))
 g.add((RUTA.afectadaPor,RDFS.domain,RUTA.Via))
 g.add((RUTA.afectadaPor,RDFS.range,RUTA.Evento))
 
+#Cantidad de velocidad promedio de las vias
 g.add((RUTA.velocidadPromedio,RDF.type,RDF.Property)) #Km/H
 g.add((RUTA.velocidadPromedio,RDFS.domain,RUTA.Via))
 g.add((RUTA.velocidadPromedio,RDFS.range,XSD.double))
 
+#Deduce si cada via se puede recorrer en ambos sentidos o no
 g.add((RUTA.esBidireccional,RDF.type,RDF.Property))
 g.add((RUTA.esBidireccional,RDFS.domain,RUTA.Via))
 g.add((RUTA.esBidireccional,RDFS.range,XSD.boolean))
 
+#Define la longitud de cada via
 g.add((RUTA.longitud,RDF.type,RDF.Property)) #Km
 g.add((RUTA.longitud,RDFS.domain,RUTA.Via))
 g.add((RUTA.longitud,RDFS.range,XSD.double))
 
 #Interseccion
+#Se define un número asignado para identificar cada una
 g.add((RUTA.numero,RDF.type,RDF.Property))
 g.add((RUTA.numero,RDFS.domain,RUTA.Interseccion))
 g.add((RUTA.numero,RDFS.range,XSD.string))
 
 #Semáforo
+#Se establece un tiempo de espera para cada uno
 g.add((RUTA.tiempoEspera,RDF.type,RDF.Property)) # segundos
 g.add((RUTA.tiempoEspera,RDFS.domain,RUTA.Semaforo))
 g.add((RUTA.tiempoEspera,RDFS.range,XSD.double))
 
+#Se le asigna una vía a cada semáforo instanciado
 g.add((RUTA.estaEnVia,RDF.type,RDF.Property))
 g.add((RUTA.estaEnVia,RDFS.domain,RUTA.Semaforo))
 g.add((RUTA.estaEnVia,RDFS.range,RUTA.Via))
 
 #Ruta:
+#Se muestra los nodos que enlazan la ruta
 g.add((RUTA.tieneNodos,RDF.type,RDF.Property))
 g.add((RUTA.tieneNodos,RDFS.domain,RUTA.Ruta))
 g.add((RUTA.tieneNodos,RDFS.range,RUTA.Interseccion))
 
+#Se muestran las vias que enlazan la ruta
 g.add((RUTA.tieneVias, RDF.type, RDF.Property))
 g.add((RUTA.tieneVias, RDFS.domain, RUTA.Ruta))
 g.add((RUTA.tieneVias, RDFS.range, RUTA.Via))
 
+#Se establece el punto de interés de Origen de la ruta como una interseccion
 g.add((RUTA.origen,RDF.type,RDF.Property))
 g.add((RUTA.origen,RDFS.domain,RUTA.Ruta))
 g.add((RUTA.origen,RDFS.range,RUTA.Interseccion))
 
+#Se establece el punto de interés de Destino de la ruta como una interseccion
 g.add((RUTA.destino,RDF.type,RDF.Property))
 g.add((RUTA.destino,RDFS.domain,RUTA.Ruta))
 g.add((RUTA.destino,RDFS.range,RUTA.Interseccion))
 
+#Se le pone un número que diferencia a cada ruta encontrada
 g.add((RUTA.numeracion,RDF.type, RDF.Property))
 g.add((RUTA.numeracion,RDFS.subClassOf,DC.title))
 g.add((RUTA.numeracion,RDFS.domain,RUTA.Ruta))
 g.add((RUTA.numeracion,RDFS.range,XSD.string))
 
 #Evento:
+#Se le asigna un tipo que indica de que se trata el evento
 g.add((RUTA.tipo,RDF.type,RDF.Property))
 g.add((RUTA.tipo,RDFS.domain,RUTA.Evento))
 g.add((RUTA.tipo,RDFS.range,XSD.string))
 
-g.add((RUTA.duracion,RDF.type,RDF.Property)) #min
+#Se establece una duración específica para cada evento
+g.add((RUTA.duracion,RDF.type,RDF.Property)) #se define en minutos
 g.add((RUTA.duracion,RDFS.domain,RUTA.Evento))
 g.add((RUTA.duracion,RDFS.range,XSD.double))
 
+#Se indica si el evento causa un cierre total de la vía o no
 g.add((RUTA.cierreTotal,RDF.type,RDF.Property))
 g.add((RUTA.cierreTotal,RDFS.domain,RUTA.Evento))
 g.add((RUTA.cierreTotal,RDFS.range,XSD.boolean))
 
 #Nodo:
+#Establece la relación entre un punto de referencia y la intersección desde la cual se puede acceder a él
 g.add((RUTA.seRelacionaCon,RDF.type,RDF.Property))
 g.add((RUTA.seRelacionaCon,RDFS.domain,RUTA.Nodo))
 g.add((RUTA.seRelacionaCon,RDFS.range,RUTA.Nodo))
 
-g.add((RUTA.intersectaCon,RDF.type,RDF.Property))
+#Establece la relación de interconexión entre nodos
 g.add((RUTA.intersectaCon, RDFS.subPropertyOf, RUTA.seRelacionaCon))
 g.add((RUTA.intersectaCon,RDFS.domain,RUTA.Interseccion))
 g.add((RUTA.intersectaCon,RDFS.range,RUTA.Interseccion))
 
-#Conecciones entre nodos e interseccion
+#Conecciones entre nodos e interseccion:
+#conectaCon indica que una intersección se enlaza con una vía
 g.add((RUTA.conectaCon,RDF.type,RDF.Property))
 g.add((RUTA.conectaCon,RDFS.domain,RUTA.Interseccion))
 g.add((RUTA.conectaCon,RDFS.range,RUTA.Via))
 
+#esConectada indica que una via se enlaza con una intersección
 g.add((RUTA.esConectada,RDF.type,RDF.Property))
 g.add((RUTA.esConectada,RDFS.domain,RUTA.Via))
 g.add((RUTA.esConectada,RDFS.range,RUTA.Interseccion))
 
 #Punto de referencia:
+#Se le asigna un nombre para identificar el lugar al que se hacer referencia
 g.add((RUTA.tieneNombre,RDF.type,RDF.Property))
 g.add((RUTA.tieneNombre, RDFS.subPropertyOf, DC.title))
 g.add((RUTA.tieneNombre,RDFS.domain,RUTA.PuntoReferencia))
 g.add((RUTA.tieneNombre,RDFS.range,XSD.string))
 
 #Instancias
+#Se le asignan URIs específicas a cada punto de interés
 unal=URIRef(RUTA.UNAL)
 carlose=URIRef(RUTA.CARLOS_E)
 exito=URIRef(RUTA.EXITO)
@@ -155,7 +180,7 @@ estadio=URIRef(RUTA.ESTADIO)
 estacion=URIRef(RUTA.ESTACION)
 piloto=URIRef(RUTA.PILOTO)
 
-#Nodos referencia:
+#Puntos de referencia y sus nombres:
 g.add((unal,RDF.type,RUTA.PuntoReferencia))
 g.add((unal,RUTA.tieneNombre,Literal("Universidad Nacional de Colombia")))
 
@@ -177,42 +202,44 @@ g.add((estacion,RUTA.tieneNombre,Literal("Estación Suramericana del Metro")))
 g.add((piloto,RDF.type,RUTA.PuntoReferencia))
 g.add((piloto,RUTA.tieneNombre,Literal("Biblioteca Pública Piloto")))
 
-#Eventos:
-g.add((RUTA.ObraVial,RDF.type,RUTA.Evento))#10
+#Eventos con su tipo, duración y si generan cierre total o no:
+g.add((RUTA.ObraVial,RDF.type,RUTA.Evento)) #Probabilidad del 10% de ocurrencia
 g.add((RUTA.ObraVial,RUTA.tipo,Literal("Obra Vial")))
 g.add((RUTA.ObraVial,RUTA.duracion,Literal(360.0)))
 g.add((RUTA.ObraVial,RUTA.cierreTotal,Literal(True)))
 
-g.add((RUTA.AccidenteGrave,RDF.type,RUTA.Evento))#5
+g.add((RUTA.AccidenteGrave,RDF.type,RUTA.Evento)) #Probabilidad del 5% de ocurrencia
 g.add((RUTA.AccidenteGrave,RUTA.tipo,Literal("Accidente Grave")))
 g.add((RUTA.AccidenteGrave,RUTA.duracion,Literal(30.0)))
 g.add((RUTA.AccidenteGrave,RUTA.cierreTotal,Literal(True)))
 
-g.add((RUTA.ObraMenor,RDF.type,RUTA.Evento))#15
+g.add((RUTA.ObraMenor,RDF.type,RUTA.Evento)) #Probabilidad del 15% de ocurrencia
 g.add((RUTA.ObraMenor,RUTA.tipo,Literal("Obra Menor")))
 g.add((RUTA.ObraMenor,RUTA.duracion,Literal(360.0)))
 g.add((RUTA.ObraMenor,RUTA.cierreTotal,Literal(False)))
 
-g.add((RUTA.AccidenteLeve,RDF.type,RUTA.Evento))#10
+g.add((RUTA.AccidenteLeve,RDF.type,RUTA.Evento)) #Probabilidad del 10% de ocurrencia
 g.add((RUTA.AccidenteLeve,RUTA.tipo,Literal("Accidente Leve")))
 g.add((RUTA.AccidenteLeve,RUTA.duracion,Literal(30.0)))
 g.add((RUTA.AccidenteLeve,RUTA.cierreTotal,Literal(False)))
 
-g.add((RUTA.Manifestacion,RDF.type,RUTA.Evento))#10
+g.add((RUTA.Manifestacion,RDF.type,RUTA.Evento)) #Probabilidad del 10% de ocurrencia
 g.add((RUTA.Manifestacion,RUTA.tipo,Literal("Manifestacion")))
 g.add((RUTA.Manifestacion,RUTA.duracion,Literal(120.0)))
 g.add((RUTA.Manifestacion,RUTA.cierreTotal,Literal(True)))
 
-g.add((RUTA.VehiculoDetenido,RDF.type,RUTA.Evento))#30
+g.add((RUTA.VehiculoDetenido,RDF.type,RUTA.Evento)) #Probabilidad del 30% de ocurrencia
 g.add((RUTA.VehiculoDetenido,RUTA.tipo,Literal("Vehiculo Detenido")))
 g.add((RUTA.VehiculoDetenido,RUTA.duracion,Literal(10.0)))
 g.add((RUTA.VehiculoDetenido,RUTA.cierreTotal,Literal(False)))
 
-g.add((RUTA.ColapsoEstructural,RDF.type,RUTA.Evento))#5
+g.add((RUTA.ColapsoEstructural,RDF.type,RUTA.Evento)) #Probabilidad del 5% de ocurrencia
 g.add((RUTA.ColapsoEstructural,RUTA.tipo,Literal("Colapso Estructural")))
 g.add((RUTA.ColapsoEstructural,RUTA.duracion,Literal(10080.0)))
 g.add((RUTA.ColapsoEstructural,RUTA.cierreTotal,Literal(True)))
 
+'''Función que genera un número aleatorio y asigna a una ruta específica uno de
+los eventos o ninguno según el número aleatorio generado'''
 def probabilidad(ruta):
     u=random.random()
     if u<0.1:
@@ -230,200 +257,204 @@ def probabilidad(ruta):
     elif u<0.85:
         g.add((ruta,RUTA.afectadaPor,RUTA.ColapsoEstructural))
 
-#Autopista:
+#Autopista junto con sus propiedades y se llama a la función anterior:
 g.add((RUTA.AutopistaSur,RDF.type,RUTA.Autopista))
 g.add((RUTA.AutopistaSur,RUTA.nombre,Literal("Autopista Sur")))
 probabilidad(RUTA.AutopistaSur)
 g.add((RUTA.AutopistaSur,RUTA.velocidadPromedio,Literal(float(random.randint(80, 100)))))
 g.add((RUTA.AutopistaSur,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.AutopistaSur,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.AutopistaSur,RUTA.longitud,Literal(1.0)))
 
-#Avenida:
+#Avenida y sus propiedades:
 g.add((RUTA.AvenidaColombia,RDF.type,RUTA.Avenida))
 g.add((RUTA.AvenidaColombia,RUTA.nombre,Literal("Avenida Colombia")))
 probabilidad(RUTA.AvenidaColombia)
 g.add((RUTA.AvenidaColombia,RUTA.velocidadPromedio,Literal(float(random.randint(40, 60)))))
 g.add((RUTA.AvenidaColombia,RUTA.esBidireccional,Literal(True)))
-g.add((RUTA.AvenidaColombia,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.AvenidaColombia,RUTA.longitud,Literal(1.5)))
 
-#Transversal:
+#Transversales y sus propiedades:
 g.add((RUTA.Transversal51a,RDF.type,RUTA.Transversal))
 g.add((RUTA.Transversal51a,RUTA.nombre,Literal("Transversal 51a")))
 probabilidad(RUTA.Transversal51a)
 g.add((RUTA.Transversal51a,RUTA.velocidadPromedio,Literal(float(random.randint(30, 40)))))
 g.add((RUTA.Transversal51a,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Transversal51a,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Transversal51a,RUTA.longitud,Literal(0.5)))
 
 g.add((RUTA.Transversal53A,RDF.type,RUTA.Transversal))
 g.add((RUTA.Transversal53A,RUTA.nombre,Literal("Transversal 53A")))
 probabilidad(RUTA.Transversal53A)
 g.add((RUTA.Transversal53A,RUTA.velocidadPromedio,Literal(float(random.randint(30, 40)))))
 g.add((RUTA.Transversal53A,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Transversal53A,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Transversal53A,RUTA.longitud,Literal(0.2)))
 
 g.add((RUTA.Transversal53B,RDF.type,RUTA.Transversal))
 g.add((RUTA.Transversal53B,RUTA.nombre,Literal("Transversal 53B")))
 probabilidad(RUTA.Transversal53B)
 g.add((RUTA.Transversal53B,RUTA.velocidadPromedio,Literal(float(random.randint(30, 40)))))
 g.add((RUTA.Transversal53B,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Transversal53B,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Transversal53B,RUTA.longitud,Literal(0.2)))
 
 g.add((RUTA.Diagonal63B,RDF.type,RUTA.Transversal))
 g.add((RUTA.Diagonal63B,RUTA.nombre,Literal("Diagonal 63B")))
 probabilidad(RUTA.Diagonal63B)
 g.add((RUTA.Diagonal63B,RUTA.velocidadPromedio,Literal(float(random.randint(30, 40)))))
 g.add((RUTA.Diagonal63B,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Diagonal63B,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Diagonal63B,RUTA.longitud,Literal(0.3)))
 
-#Calle:
+#Calles y sus propiedades:
 g.add((RUTA.Calle55,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle55,RUTA.nombre,Literal("Calle 55")))
 probabilidad(RUTA.Calle55)
 g.add((RUTA.Calle55,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle55,RUTA.esBidireccional,Literal(True)))
-g.add((RUTA.Calle55,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Calle55,RUTA.longitud,Literal(1.5)))
 
 g.add((RUTA.Calle48,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle48,RUTA.nombre,Literal("Calle 48")))
 probabilidad(RUTA.Calle48)
 g.add((RUTA.Calle48,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle48,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Calle48,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Calle48,RUTA.longitud,Literal(1.5)))
 
 g.add((RUTA.Calle51,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle51,RUTA.nombre,Literal("Calle 51")))
 probabilidad(RUTA.Calle51)
 g.add((RUTA.Calle51,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle51,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Calle51,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Calle51,RUTA.longitud,Literal(1.5)))
 
 g.add((RUTA.Calle48D,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle48D,RUTA.nombre,Literal("Calle 48D")))
 probabilidad(RUTA.Calle48D)
 g.add((RUTA.Calle48D,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle48D,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Calle48D,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Calle48D,RUTA.longitud,Literal(0.4)))
 
 g.add((RUTA.Calle49A,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle49A,RUTA.nombre,Literal("Calle 49A")))
 probabilidad(RUTA.Calle49A)
 g.add((RUTA.Calle49A,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle49A,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Calle49A,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Calle49A,RUTA.longitud,Literal(0.1)))
 
 g.add((RUTA.Calle49B,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle49B,RUTA.nombre,Literal("Calle 49B")))
 probabilidad(RUTA.Calle49B)
 g.add((RUTA.Calle49B,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle49B,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Calle49B,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Calle49B,RUTA.longitud,Literal(0.6)))
 
 g.add((RUTA.Calle53,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle53,RUTA.nombre,Literal("Calle 53")))
 probabilidad(RUTA.Calle53)
 g.add((RUTA.Calle53,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle53,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Calle53,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Calle53,RUTA.longitud,Literal(0.2)))
 
 g.add((RUTA.Calle52,RDF.type,RUTA.Calle))
 g.add((RUTA.Calle52,RUTA.nombre,Literal("Calle 52")))
 probabilidad(RUTA.Calle52)
 g.add((RUTA.Calle52,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Calle52,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Calle52,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Calle52,RUTA.longitud,Literal(0.1)))
 
-#Carrera
+#Carreras y sus propiedades
 g.add((RUTA.Carrera65,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera65,RUTA.nombre,Literal("Carrera 65")))
 probabilidad(RUTA.Carrera65)
 g.add((RUTA.Carrera65,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera65,RUTA.esBidireccional,Literal(True)))
-g.add((RUTA.Carrera65,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Carrera65,RUTA.longitud,Literal(1.5)))
 
 g.add((RUTA.Carrera66,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera66,RUTA.nombre,Literal("Carrera 66")))
 probabilidad(RUTA.Carrera66)
 g.add((RUTA.Carrera66,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera66,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Carrera66,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Carrera66,RUTA.longitud,Literal(0.4)))
 
 g.add((RUTA.Carrera67,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera67,RUTA.nombre,Literal("Carrera 67")))
 probabilidad(RUTA.Carrera67)
 g.add((RUTA.Carrera67,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera67,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Carrera67,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Carrera67,RUTA.longitud,Literal(0.4)))
 
 g.add((RUTA.Carrera73,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera73,RUTA.nombre,Literal("Carrera 73")))
 probabilidad(RUTA.Carrera73)
 g.add((RUTA.Carrera73,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera73,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Carrera73,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Carrera73,RUTA.longitud,Literal(0.6)))
 
 g.add((RUTA.Carrera74,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera74,RUTA.nombre,Literal("Carrera 74")))
 probabilidad(RUTA.Carrera74)
 g.add((RUTA.Carrera74,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera74,RUTA.esBidireccional,Literal(True)))
-g.add((RUTA.Carrera74,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Carrera74,RUTA.longitud,Literal(0.8)))
 
 g.add((RUTA.Carrera67B,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera67B,RUTA.nombre,Literal("Carrera 67B")))
 probabilidad(RUTA.Carrera67B)
 g.add((RUTA.Carrera67B,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera67B,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Carrera67B,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Carrera67B,RUTA.longitud,Literal(0.2)))
 
 g.add((RUTA.BulevarLibertadores,RDF.type,RUTA.Carrera))
 g.add((RUTA.BulevarLibertadores,RUTA.nombre,Literal("Bulevar Libertadores de América")))
 probabilidad(RUTA.BulevarLibertadores)
 g.add((RUTA.BulevarLibertadores,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.BulevarLibertadores,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.BulevarLibertadores,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.BulevarLibertadores,RUTA.longitud,Literal(1.5)))
 
 g.add((RUTA.Carrera68,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera68,RUTA.nombre,Literal("Carrera 68")))
 probabilidad(RUTA.Carrera68)
 g.add((RUTA.Carrera68,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera68,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Carrera68,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Carrera68,RUTA.longitud,Literal(0.3)))
 
 g.add((RUTA.Carrera64,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera64,RUTA.nombre,Literal("Carrera 64")))
 probabilidad(RUTA.Carrera64)
 g.add((RUTA.Carrera64,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera64,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Carrera64,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Carrera64,RUTA.longitud,Literal(0.2)))
 
 g.add((RUTA.Carrera64B,RDF.type,RUTA.Carrera))
 g.add((RUTA.Carrera64B,RUTA.nombre,Literal("Carrera 64B")))
 probabilidad(RUTA.Carrera64B)
 g.add((RUTA.Carrera64B,RUTA.velocidadPromedio,Literal(float(random.randint(20, 30)))))
 g.add((RUTA.Carrera64B,RUTA.esBidireccional,Literal(False)))
-g.add((RUTA.Carrera64B,RUTA.longitud,Literal(np.random.uniform(0.5, 2))))
+g.add((RUTA.Carrera64B,RUTA.longitud,Literal(0.1)))
 
 #Intersecciones:
+#Se crea un diccionario en el cual se almacenan los Bnodes generados por cada interseccion
 intersecciones = dict()
 
+#Además se asignan las tripletas con el número dado a cada una de ellas
 for i in range(1, 52):
     nodo = BNode()
     intersecciones[f"Interseccion{i}"] = nodo
     g.add((nodo, RDF.type, RUTA.Interseccion))
     g.add((nodo, RUTA.numero, Literal(str(i), datatype=XSD.string)))
 
+#Este método genera las conexiones viales del gráfico, es decir define los nodos intersectados entre sí, además establece las relaciones Nodo-Via-Nodo
 def intersecta(nodo1, nodo2, via):
     g.add((nodo1, RUTA.intersectaCon, nodo2))
     g.add((nodo1, RUTA.conectaCon, via))
     g.add((via, RUTA.esConectada, nodo2))
 
+    #Si la via es bidireccional se agregan las mimas tirpletas pero en orden inverso
     for _, _, bidir in g.triples((via, RUTA.esBidireccional, None)):
         if bidir.toPython():  # True
             g.add((nodo2, RUTA.intersectaCon, nodo1))
             g.add((nodo2, RUTA.conectaCon, via))
             g.add((via, RUTA.esConectada, nodo1))
 
-
+#Se establecen cada una de las conexiones viales presentes en el grafo
 intersecta(intersecciones["Interseccion1"], intersecciones["Interseccion3"],RUTA.Calle55)
 intersecta(intersecciones["Interseccion2"], intersecciones["Interseccion3"],RUTA.BulevarLibertadores)
 intersecta(intersecciones["Interseccion3"], intersecciones["Interseccion4"],RUTA.Calle55)
@@ -533,7 +564,7 @@ intersecta(intersecciones["Interseccion50"], intersecciones["Interseccion44"],RU
 intersecta(intersecciones["Interseccion51"], intersecciones["Interseccion26"],RUTA.BulevarLibertadores)
 intersecta(intersecciones["Interseccion51"], intersecciones["Interseccion47"],RUTA.Calle49B)
 
-#Intersecciones accesibles desde Puntos de referencia
+#Intersecciones desde las cuales se hacen accesibles cada uno de los puntos de referencia
 g.add((estadio,RUTA.seRelacionaCon,intersecciones["Interseccion25"]))
 g.add((estacion,RUTA.seRelacionaCon,intersecciones["Interseccion30"]))
 g.add((exito,RUTA.seRelacionaCon,intersecciones["Interseccion41"]))
@@ -543,7 +574,7 @@ g.add((piloto,RUTA.seRelacionaCon,intersecciones["Interseccion9"]))
 g.add((unal,RUTA.seRelacionaCon,intersecciones["Interseccion5"]))
 g.add((unal,RUTA.seRelacionaCon,intersecciones["Interseccion6"]))
 
-#Agregar semáforos
+#Función que permite agregar semáforos incluyendo el tiempo de espera en cada uno y la vía a la cual pertenece
 def agregar_semaforo(via, tiempo):
     semaforo = BNode()
     g.add((semaforo, RDF.type, RUTA.Semaforo))
@@ -551,6 +582,7 @@ def agregar_semaforo(via, tiempo):
     g.add((semaforo, RUTA.estaEnVia, via))
     return semaforo
 
+#Se agregan los semáforos con sus respectivos parámetros
 agregar_semaforo(RUTA.AvenidaColombia, 45.0)
 agregar_semaforo(RUTA.Transversal51a, 40.0)
 agregar_semaforo(RUTA.Calle55, 35.0)
@@ -578,25 +610,25 @@ g1=set(g)
 
 print(f"Antes del análisis existe {len(g1)} tripletas\n")
 
-'''print("=== Tripletas de tipos antes del razonamiento ===")
+print("=== Tripletas de tipos antes del razonamiento ===")
 for s, p, o in g:
     if p == RDF.type:
         print(f"{s} {p} {o}")
 
 
-print("=== Tripletas de propiedades antes del razonamiento ===")
+print("\n=== Tripletas de propiedades antes del razonamiento ===")
 for s, p, o in g:
     if (str(s).startswith(str(RUTA)) or str(o).startswith(str(RUTA))) and (o!=RDFS.Resource) and (p!=RDFS.subClassOf) and (p!=RDFS.subPropertyOf):
         print(f"{s} {p} {o}")
 
-print("=== Tripletas totales antes del razonamiento ===")
+print("\n=== Tripletas totales antes del razonamiento ===")
 for s, p, o in g:
-    print(f"{s} {p} {o}")'''
+    print(f"{s} {p} {o}")
 
 # Aplicamos razonamiento de la librería owlrl
 DeductiveClosure(RDFS_Semantics, axiomatic_triples=True, datatype_axioms=False).expand(g)
 
-print(f"Tras el análisis existen {len(g)} tripletas.\n")
+print(f"\nTras el análisis existen {len(g)} tripletas.\n")
 
 #Guardamos las tripletas después del razonamiento
 g2=set(g)
@@ -605,38 +637,45 @@ print(f"Se han generado {len(g2-g1)} nuevas tripletas.\n")
 
 # Ver resultados
 
-'''print("=== Tripletas de tipos después del razonamiento ===")
+print("=== Tripletas de tipos después del razonamiento ===")
 for s, p, o in g:
     if p == RDF.type:
         print(f"{s} {p} {o}")
 
 
-print("=== Tripletas de propiedades después del razonamiento ===")
+print("\n=== Tripletas de propiedades después del razonamiento ===")
 for s, p, o in g:
     if (str(s).startswith(str(RUTA)) or str(o).startswith(str(RUTA))) and (o!=RDFS.Resource) and (p!=RDFS.subClassOf) and (p!=RDFS.subPropertyOf):
         print(f"{s} {p} {o}")
 
-print("=== Tripletas totales después del razonamiento ===")
+print("\n=== Tripletas nuevas relevantes obtenidas dentro del dominio del problema ===")
 for s, p, o in g:
-    print(f"{s} {p} {o}")'''
+    if (s, p, o) not in g1:
+        if (str(s).startswith(str(RUTA)) or str(p).startswith(str(RUTA)) or str(o).startswith(str(RUTA))) and ((o!=RDFS.Resource)):
+            print(f"{s} {p} {o}")
 
 
-#Serialización final
+#Serialización parcial de la Ontología en Turtle
 #print(g.serialize(format="turtle"))
 
+'''A partir de ahora usaremos grafos y recorridos dfs para generar todas las
+posibles rutas entre cada uno de los puntos de interés y guardarlas en tripletas
+específicas que luego podrán ser comparadas en el sistema experto para
+determinar cual es la mejor ruta de todas entre dos puntos específicos'''
 
-
-
-
+#Se crea el grafo usando la librería networkx
 G = nx.DiGraph()
 
+#Se obtienen los nodos del grafo filtrando las tripletas de la ontología
 for s, _, _ in g.triples((None, RDF.type, RUTA.Interseccion)):
     G.add_node(s)
 
+#Se obtienen las vias del grafo filtrando las tripletas de la ontología
 for inter, _, via in g.triples((None, RUTA.conectaCon, None)):
     for _, _, inter2 in g.triples((via, RUTA.esConectada, None)):
         G.add_edge(inter, inter2, via=via)
 
+#Se establecen referencias numéricas a cada intersección
 mapa_numeros = {}
 for s, _, num in g.triples((None, RUTA.numero, None)):
     try:
@@ -644,6 +683,9 @@ for s, _, num in g.triples((None, RUTA.numero, None)):
     except ValueError:
         continue
 
+'''Método que usa dfs para calcular todas las posibles vias entre los
+intersecciones definidas por sus números con una longitud máxima de 10 y
+devuelve una lista con las posibles rutas'''
 def rutas_sin_repetir_vias(G, inicio, fin, cutoff=10):
     rutas = []
     def dfs(actual, destino, camino, vias_usadas, nodos_usados, depth):
@@ -664,31 +706,37 @@ def rutas_sin_repetir_vias(G, inicio, fin, cutoff=10):
     dfs(inicio, fin, [(inicio, None)], set(), {inicio}, 0)
     return rutas
 
+'''Método mediante el cual se crean rutas y se les asigna un número para agregar
+como tripletas a la ontología según lo arrojado del método anterior'''
 def agregar_ruta_al_grafo(ruta, id, origen, destino):
     ruta_node = BNode()
     g.add((ruta_node, RDF.type, RUTA.Ruta))
     g.add((ruta_node, RUTA.numeracion, Literal(f"Ruta{id}")))
-    
-    # Origen y destino explícitos
+
+    # Origen y destino de las rutas
     g.add((ruta_node, RUTA.origen, origen))
     g.add((ruta_node, RUTA.destino, destino))
-    
-    # Secuencia de intersecciones
+
+    # Secuencia de intersecciones de la ruta usando Collections y Bnodes
     nodos_ruta = [nodo for nodo, _ in ruta]
     lista_nodos = BNode()
     Collection(g, lista_nodos, nodos_ruta)
     g.add((ruta_node, RUTA.tieneNodos, lista_nodos))
 
-    # Secuencia de vias
+    # Secuencia de vias de la ruta usando Collections y Bnodes
     vias_ruta = [via for _, via in ruta if via is not None]
     lista_vias = BNode()
     Collection(g, lista_vias, vias_ruta)
     g.add((ruta_node, RUTA.tieneVias, lista_vias))
-    
+
+    #Se retorna el BNode de la ruta
     return ruta_node
 
+#Se define una lista con los puntos de referencia creados anteriormente
 puntos_referencia = [unal, estadio, exito, luisamigo, estacion, piloto, carlose]
 
+#Se crea un diccionario que contiene las intersecciones desde las cuales se
+#puede acceder a cada punto de referencia
 mapa_origen_destino = {}
 for punto in puntos_referencia:
     inters = []
@@ -696,6 +744,11 @@ for punto in puntos_referencia:
         inters.append(inter)
     mapa_origen_destino[punto] = inters
 
+'''Se agregan las rutas como tripletas al grafo usando los métodos definidos
+anteriormente y teniendo en cuenta los valores agregados en el diccionario
+anterior. Tras este proceso se obtienen en el grafo de la Ontología todas las
+posibles rutas que se pueden realizar entre los puntos de referencia definidos
+anteriormente'''
 contador = 1
 for p_origen, origenes in mapa_origen_destino.items():
     for p_destino, destinos in mapa_origen_destino.items():
@@ -713,6 +766,8 @@ for p_origen, origenes in mapa_origen_destino.items():
 print("Total de tripletas con todas las rutas:", len(g))
 
 
+"""Esta sección de código se puede usar para observar todas las rutas generadas
+entre dos puntos específicos
 
 inicios = [v for (_, _, v) in g.triples((unal, RUTA.seRelacionaCon, None))]
 fines = [v for (_, _, v) in g.triples((piloto, RUTA.seRelacionaCon, None))]
@@ -731,6 +786,7 @@ for i, ruta in enumerate(rutas_totales, 1):
     for nodo, via in ruta[1:]:
         num = mapa_numeros.get(nodo, "?")
         partes.append(f"{via.split('#')[-1]} → {num}")
-    print(f"Ruta {i}: " + " | ".join(partes))
+    print(f"Ruta {i}: " + " | ".join(partes))"""
 
-
+#Serialización final
+print(g.serialize(format="turtle"))

@@ -5,8 +5,6 @@ Traductor del componente de la ontología al sistema experto
 from typing import Any, Sequence
 from rdflib import RDF, RDFS, XSD, BNode, Graph, Node, URIRef, Literal, DC
 from experta import Fact
-from practica1.ontologia import RUTA, GEO
-from practica1.sistema_experto import Evento, Nodo, Ruta, Semaforo, Via
 from collections import defaultdict
 
 
@@ -376,7 +374,3 @@ def _recorrer_collection(tripletas: Tripletas, collection: Predicados) -> list[N
             break
         cur = tripletas[rest]
     return resultado
-
-
-# FIXME: probablemente al final sería mejor quitar los Exception e imprimir en su lugar
-# advertencias, para que no se rompa el programa si llega a aparecer algo inesperado

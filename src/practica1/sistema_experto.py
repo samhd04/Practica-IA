@@ -2,14 +2,18 @@
 Sistema experto, contiene definiciones de clases de hechos y el motor de inferencia con sus reglas
 """
 
+import collections.abc
+
+# Parche por fallos en importación de experta
+if not hasattr(collections, "Mapping"):
+    setattr(collections, "Mapping", collections.abc.Mapping)
+
 from collections import defaultdict
 from math import inf
 from experta import MATCH, Fact, KnowledgeEngine, Rule, NOT
 import random
 
 from numpy import isin
-
-from practica1.sistema_logica_difusa import calcular_fluidez_via
 
 random.seed(42)
 
@@ -95,7 +99,7 @@ class TiempoVia(Fact):
     Representa el tiempo que toma atravesar una vía
     Campos:
         - via: el nombre de la via
-        - tiempo_estimado: tiempo en minutos que toma atravesar la via
+        - tiempo_estimado: tiempo en horas que toma atravesar la via
         - incluye_tiempos_semaforo: True si los incluye
         - incluye_tiempos_eventos: True si los incluye
         - incluye_tiempos_fluidez: True si los incluye
@@ -105,10 +109,10 @@ class TiempoVia(Fact):
 
 class TiempoRuta(Fact):
     """
-    Representa el tiempo en minutos que se demoraría un carro en seguir una ruta
+    Representa el tiempo en horas que se demoraría un carro en seguir una ruta
     Campos:
         - ruta: el nombre de la ruta
-        - tiempo_estimado: tiempo en minutos que toma atravesar la ruta
+        - tiempo_estimado: tiempo en horas que toma atravesar la ruta
     """
 
 
@@ -177,18 +181,18 @@ class Motor(KnowledgeEngine):
         if evento_tipo not in via_afectada_por:
             return
 
-        print(
+        '''print(
             f"Eliminando via {via_nombre} pues está afectada por evento de cierre total: {evento_tipo}"
-        )
+        )'''
         self.retract(self.__vias[via_nombre])
         del self.__vias[via_nombre]
 
         rutas_eliminadas = []
         for ruta_numeracion, ruta in self.__rutas.items():
             if via_nombre in ruta["vias"]:
-                print(
+                '''print(
                     f"También eliminando la ruta {ruta_numeracion} que contiene via con cierre total"
-                )
+                )'''
                 self.retract(ruta)
                 rutas_eliminadas.append(ruta_numeracion)
 
@@ -214,13 +218,13 @@ class Motor(KnowledgeEngine):
         """
         # si la ruta inicia en el punto de referencia deseado
         if ruta_origen in punto_se_relaciona_con:
-            print(
+            '''print(
                 f"La ruta {ruta_numeracion} sirve (inicia en el punto de origen deseado)"
-            )
+            )'''
         else:
-            print(
+            '''print(
                 f"Eliminando ruta {ruta_numeracion} debido a que no inicia en el punto de partida deseado"
-            )
+            )'''
             self.retract(self.__rutas[ruta_numeracion])
             del self.__rutas[ruta_numeracion]
 
@@ -243,13 +247,13 @@ class Motor(KnowledgeEngine):
         """
         # si la ruta termina en el punto de referencia deseado
         if ruta_destino in punto_se_relaciona_con:
-            print(
+            '''print(
                 f"La ruta {ruta_numeracion} sirve (termina en el punto de llegada deseado)"
-            )
+            )'''
         else:
-            print(
+            '''print(
                 f"Eliminando ruta {ruta_numeracion} debido a que no termina en el punto de llegada deseado"
-            )
+            )'''
             self.retract(self.__rutas[ruta_numeracion])
             del self.__rutas[ruta_numeracion]
 
@@ -264,7 +268,7 @@ class Motor(KnowledgeEngine):
             via = self.__vias[nombre_via]
             distancia += via["longitud"]
 
-        print(f"Distancia de ruta {numeracion} calculada: {distancia} km")
+        '''print(f"Distancia de ruta {numeracion} calculada: {distancia} km")'''
         hecho = self.declare(DistanciaRuta(ruta=numeracion, distancia=distancia))
         self.__distancias_ruta[numeracion] = hecho
 
@@ -282,7 +286,7 @@ class Motor(KnowledgeEngine):
         Cálculo inicial del tiempo estimado que toma atravesar una via
         """
         tiempo = longitud / velocidad_promedio
-        print(f"Cálculo inicial de tiempo estimado para via {nombre}: {tiempo} horas")
+        '''print(f"Cálculo inicial de tiempo estimado para via {nombre}: {tiempo} horas")'''
         hecho = self.declare(TiempoVia(via=nombre, tiempo_estimado=tiempo))
         self.__tiempos_via[nombre] = hecho
 
@@ -299,9 +303,9 @@ class Motor(KnowledgeEngine):
         # El nuevo tiempo será el tiempo anterior sumado al tiempo del semaforo convertido de
         # segundos a horas
         nuevo_tiempo = tiempo + (tiempo_semaforo / 60 / 60)
-        print(
+        '''print(
             f"Cálculo (incluyendo semaforos) de tiempo estimado para via {via_nombre}: {nuevo_tiempo} horas"
-        )
+        )'''
         tiempo_via = self.__tiempos_via[via_nombre]
         tiempo_via = self.modify(
             tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_semaforo=True
@@ -334,9 +338,9 @@ class Motor(KnowledgeEngine):
         # el nuevo tiempo será el tiempo anterior sumado a la duración del evento convertido de
         # minutos a horas
         nuevo_tiempo = tiempo + (evento_duracion / 60)
-        print(
+        '''print(
             f"Cálculo (incluyendo {evento_tipo}) de tiempo estimado para via {via_nombre}: {nuevo_tiempo}"
-        )
+        )'''
         tiempo_via = self.__tiempos_via[via_nombre]
         tiempo_via = self.modify(
             tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_eventos=True
@@ -358,7 +362,7 @@ class Motor(KnowledgeEngine):
             tiempo_via = self.__tiempos_via[via_nombre]
             tiempo_estimado += tiempo_via["tiempo_estimado"]
 
-        print(f"Tiempo de la ruta {numeracion} calculado: {tiempo_estimado}")
+        '''print(f"Tiempo de la ruta {numeracion} calculado: {tiempo_estimado}")'''
         tiempo_ruta = self.declare(
             TiempoRuta(ruta=numeracion, tiempo_estimado=tiempo_estimado)
         )
@@ -379,9 +383,9 @@ class Motor(KnowledgeEngine):
 
         fluidez_literal = calcular_fluidez_via(congestion_val, velocidad, espera_val)
 
-        print(
+        '''print(
             f"Fluidez de la via {via_nombre} (con semáforo) calculada: {fluidez_literal}"
-        )
+        )'''
         self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
 
     @Rule(
@@ -399,9 +403,9 @@ class Motor(KnowledgeEngine):
 
         fluidez_literal = calcular_fluidez_via(congestion_val, velocidad, espera_val)
 
-        print(
+        '''print(
             f"Fluidez de la via {via_nombre} (sin semáforo) calculada: {fluidez_literal}"
-        )
+        )'''
         self.declare(Fluidez(via=via_nombre, fluidez=str(fluidez_literal)))
 
     @Rule(Fluidez(fluidez="nula", via=MATCH.via), salience=15)
@@ -410,15 +414,15 @@ class Motor(KnowledgeEngine):
         Regla que elimina las vias con fluidez nula, y por lo tanto también elimina todas las rutas
         que transitan esa vía eliminada
         """
-        print(f"Eliminando via {via} debido a que presenta una fluidez nula")
+        #print(f"Eliminando via {via} debido a que presenta una fluidez nula")
         self.retract(self.__vias[via])
         del self.__vias[via]
 
         for ruta_numeracion, ruta in self.__rutas.items():
             if via in ruta["vias"]:
-                print(
+                '''print(
                     f"\tTambién eliminando ruta {ruta_numeracion} que contiene via con fluidez nula"
-                )
+                )'''
                 self.retract(ruta)
                 del self.__rutas[ruta_numeracion]
 
@@ -447,10 +451,10 @@ class Motor(KnowledgeEngine):
 
         if factor != 1.0:
             nuevo_tiempo = tiempo * factor
-            print(
+            '''print(
                 f"Ajustando tiempo de via {via_nombre} por fluidez {fluidez_val}: "
                 f"{tiempo} → {nuevo_tiempo}"
-            )
+            )'''
             tiempo_via = self.__tiempos_via[via_nombre]
             tiempo_via = self.modify(
                 tiempo_via, tiempo_estimado=nuevo_tiempo, incluye_tiempos_fluidez=True
@@ -468,9 +472,9 @@ class Motor(KnowledgeEngine):
         Reduce en un 10% el tiempo estimado de vías bidireccionales
         """
         nuevo_tiempo = tiempo * 0.9
-        print(
+        '''print(
             f"Reduciendo tiempo de via {via_nombre} por ser bidireccional: {nuevo_tiempo}"
-        )
+        )'''
         tiempo_via = self.__tiempos_via[via_nombre]
         tiempo_via = self.modify(
             tiempo_via,
@@ -494,7 +498,7 @@ class Motor(KnowledgeEngine):
                 min_distancia = distancia_ruta["distancia"]
 
         if distancia > (3 * min_distancia):  # 3 veces más larga
-            print(f"Eliminando ruta {numeracion} por ser demasiado larga")
+            '''print(f"Eliminando ruta {numeracion} por ser demasiado larga")'''
             self.retract(self.__rutas[numeracion])
             del self.__rutas[numeracion]
 
@@ -516,10 +520,27 @@ class Motor(KnowledgeEngine):
             print("No fue posible encontrar la mejor ruta")
             return
 
-        print(f"La mejor ruta es: {mejor_ruta['numeracion']}")
+        tiempo_horas = self.__tiempos_ruta[mejor_ruta["numeracion"]]["tiempo_estimado"]
+        tiempo_minutos = round(tiempo_horas * 60, 2)
+        distancia = round(self.__distancias_ruta[mejor_ruta["numeracion"]]["distancia"], 2)
+        print(f"La mejor ruta es: {mejor_ruta['numeracion']} con un tiempo estimado de {tiempo_minutos} minutos y una distancia de {distancia} km")
         for via in mejor_ruta["vias"]:
             print(f"\t{via}")
+
         print("Pasando por las intersecciones:")
+        # se lleva registro de la ultima via en las intersecciones para mostrar el orden correcto
+        ultima_via = None
         for interseccion_numero in mejor_ruta["tiene_nodos"]:
             interseccion = self.__intersecciones[interseccion_numero]
-            print(f"\t{interseccion_numero} ({list(interseccion['conecta_con'])})")
+
+            vias = []
+            if ultima_via is not None:
+              vias.append(ultima_via)
+              for via in interseccion['conecta_con']:
+                if via != ultima_via:
+                  vias.append(via)
+            else:
+              vias = list(interseccion['conecta_con'])
+
+            print(f"\t{interseccion_numero} ({vias})")
+            ultima_via = vias[-1]
